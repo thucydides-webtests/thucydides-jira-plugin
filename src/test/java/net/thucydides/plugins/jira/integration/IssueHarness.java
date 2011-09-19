@@ -7,12 +7,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-class TestIssueHarness {
+class IssueHarness {
 
     private final String jiraUrl;
     private List<String> testIssueKeys = new ArrayList<String>();
 
-    public TestIssueHarness(final String jiraUrl) {
+    public IssueHarness(final String jiraUrl) {
         this.jiraUrl = jiraUrl;
     }
 

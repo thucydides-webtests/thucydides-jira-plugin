@@ -1,5 +1,7 @@
 package net.thucydides.plugins.jira.service;
 
+import net.thucydides.core.ThucydidesSystemProperty;
+
 /**
  * Obtain the JIRA configuration details from system properties.
  */
@@ -22,4 +24,6 @@ public class SystemPropertiesJIRAConfiguration implements JIRAConfiguration {
         String baseUrl = System.getProperty(JIRA_URL);
         return baseUrl + "/rpc/soap/jirasoapservice-v2";
     }
+
+
 }

@@ -1,4 +1,6 @@
-package net.thucydides.plugins.jira.service;
+package net.thucydides.plugins.jira.model;
+
+import java.util.List;
 
 /**
  * An interface to an issue tracking system.
@@ -9,7 +11,11 @@ public interface IssueTracker {
     /**
      * Add a new comment to the specified issue in the remote issue tracking system.
      * @param issueKey the unique key identifying the issue to be commented.
-     * @param the text of the comment.
+     * @param commentText  text of the comment.
      */
-    void addComment(final String issueKey, final String commentText)  throws IssueTrackerUpdateException;
+    void addComment(final String issueKey, final String commentText) throws IssueTrackerUpdateException;
+
+    List<IssueComment> getCommentsFor(final String issueKey) throws IssueTrackerUpdateException;
+
+    void updateComment(final IssueComment issueComment);
 }

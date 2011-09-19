@@ -1,22 +1,36 @@
 package net.thucydides.plugins.jira;
 
-import net.thucydides.core.ThucydidesSystemProperty;
 import net.thucydides.core.annotations.Feature;
 import net.thucydides.core.annotations.Story;
 import net.thucydides.core.annotations.Title;
 import net.thucydides.core.junit.rules.SaveWebdriverSystemPropertiesRule;
+import net.thucydides.core.steps.ExecutedStepDescription;
+import net.thucydides.core.steps.StepFailure;
 import net.thucydides.core.steps.TestStepResult;
-import net.thucydides.plugins.jira.service.IssueTracker;
+import net.thucydides.plugins.jira.model.IssueComment;
+import net.thucydides.plugins.jira.model.IssueTracker;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.Arrays;
+import java.util.List;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.contains;
+import static org.mockito.Matchers.isNotNull;
+import static org.mockito.Matchers.notNull;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class WhenUpdatingCommentsInJIRA {
 
@@ -46,7 +60,14 @@ public class WhenUpdatingCommentsInJIRA {
         MockitoAnnotations.initMocks(this);
     }
 
-    @Mock IssueTracker issueTracker;
+    @After
+    public void resetPluginSpecificProperties() {
+        System.clearProperty("thucydides.skip.jira.updates");
+    }
+
+    @Mock
+    IssueTracker issueTracker;
+
     @Mock TestStepResult result;
 
     @Test
@@ -72,6 +93,55 @@ public class WhenUpdatingCommentsInJIRA {
         verify(issueTracker).addComment(eq("MYPROJECT-456"), anyString());
     }
 
+    @Mock
+    ExecutedStepDescription stepDescription;
+
+    @Mock
+    StepFailure failure;
+
+    @Test
+    public void should_add_one_comment_even_when_several_steps_are_called() {
+        JiraListener listener = new JiraListener(issueTracker);
+
+        listener.testSuiteStarted(SampleTestSuite.class);
+        listener.testStarted("issue_123_and_456_should_be_fixed_now");
+
+        listener.stepStarted(stepDescription);
+        listener.stepFinished();
+
+        listener.stepStarted(stepDescription);
+        listener.stepFailed(failure);
+
+        listener.stepStarted(stepDescription);
+        listener.stepIgnored();
+
+        listener.stepStarted(stepDescription);
+        listener.stepPending();
+
+        listener.testFailed(new AssertionError("Oops!"));
+
+        listener.testFinished(result);
+
+        listener.testStarted("anotherTest");
+        listener.testIgnored();
+
+        verify(issueTracker).addComment(eq("MYPROJECT-123"), anyString());
+        verify(issueTracker).addComment(eq("MYPROJECT-456"), anyString());
+    }
+
+    @Test
+    public void should_work_with_a_story_class() {
+        JiraListener listener = new JiraListener(issueTracker);
+        System.setProperty("thucydides.public.url", "http://my.server/myproject/thucydides");
+
+        listener.testSuiteStarted(net.thucydides.core.model.Story.from(SampleTestSuite.class));
+        listener.testStarted("Fixes issues #MYPROJECT-123");
+        listener.testFinished(result);
+
+        verify(issueTracker).addComment(eq("MYPROJECT-123"),
+                contains("[Thucydides Test Results|http://my.server/myproject/thucydides/sample_test_suite.html]"));
+    }
+
     @Test
     public void the_comment_should_contain_a_link_to_the_corresponding_story_report() {
         JiraListener listener = new JiraListener(issueTracker);
@@ -81,7 +151,45 @@ public class WhenUpdatingCommentsInJIRA {
         listener.testFinished(result);
 
         verify(issueTracker).addComment(eq("MYPROJECT-123"),
-                                        contains("<a href=\"http://my.server/myproject/thucydides/sample_story.html\">Thucyides Test Results</a>"));
+                contains("[Thucydides Test Results|http://my.server/myproject/thucydides/sample_story.html]"));
     }
 
+    @Test
+    public void should_update_existing_thucydides_report_comments_if_present() {
+
+        List<IssueComment> existingComments = Arrays.asList(new IssueComment(1L,"a comment", "bruce"),
+                                                            new IssueComment(2L,"Thucydides Test Results", "bruce"));
+        when(issueTracker.getCommentsFor("MYPROJECT-123")).thenReturn(existingComments);
+
+        JiraListener listener = new JiraListener(issueTracker);
+        System.setProperty("thucydides.public.url", "http://my.server/myproject/thucydides");
+        listener.testSuiteStarted(SampleTestSuite.class);
+        listener.testStarted("issue_123_should_be_fixed_now");
+        listener.testFinished(result);
+
+        verify(issueTracker).updateComment(any(IssueComment.class));
+    }
+
+
+    @Test
+    public void should_skip_JIRA_updates_if_requested() {
+        System.setProperty("thucydides.skip.jira.updates", "true");
+
+        System.setProperty("thucydides.public.url", "http://my.server/myproject/thucydides");
+
+        JiraListener listener = new JiraListener(issueTracker);
+        listener.testSuiteStarted(SampleTestSuite.class);
+        listener.testStarted("issue_123_should_be_fixed_now");
+        listener.testFinished(result);
+
+        verify(issueTracker, never()).addComment(anyString(), anyString());
+    }
+
+
+    @Test
+    public void default_listeners_should_use_default_issue_tracker() {
+        JiraListener listener = new JiraListener();
+
+        assertThat(listener.getIssueTracker(), is(notNullValue()));
+    }
 }

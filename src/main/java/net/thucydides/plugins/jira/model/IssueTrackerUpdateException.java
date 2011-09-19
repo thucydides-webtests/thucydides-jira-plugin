@@ -1,4 +1,4 @@
-package net.thucydides.plugins.jira.service;
+package net.thucydides.plugins.jira.model;
 
 /**
  * Thrown when the issue tracking system could not be updated for some reason.
