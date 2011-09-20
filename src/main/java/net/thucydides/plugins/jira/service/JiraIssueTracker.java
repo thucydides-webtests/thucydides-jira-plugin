@@ -4,6 +4,7 @@ package net.thucydides.plugins.jira.service;
 import ch.lambdaj.function.convert.Converter;
 import ch.lambdaj.function.convert.PropertyExtractor;
 import net.thucydides.plugins.jira.client.SOAPSession;
+import net.thucydides.plugins.jira.guice.Injectors;
 import net.thucydides.plugins.jira.model.IssueComment;
 import net.thucydides.plugins.jira.model.IssueTracker;
 import net.thucydides.plugins.jira.model.IssueTrackerUpdateException;
@@ -28,16 +29,20 @@ import static ch.lambdaj.Lambda.on;
  */
 public class JiraIssueTracker implements IssueTracker {
 
-
     private final JIRAConfiguration configuration;
+
     private SOAPSession soapSession;
 
     public JiraIssueTracker() {
-        configuration = new SystemPropertiesJIRAConfiguration();
+        configuration = Injectors.getInjector().getInstance(JIRAConfiguration.class);
     }
 
     protected JIRAConfiguration getConfiguration() {
         return configuration;
+    }
+
+    public boolean isWikiRenderedActive() {
+        return getConfiguration().isWikiRenderedActive();
     }
 
     private SOAPSession getSoapSession() throws MalformedURLException, RemoteException {

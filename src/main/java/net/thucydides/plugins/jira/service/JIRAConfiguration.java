@@ -5,10 +5,11 @@ package net.thucydides.plugins.jira.service;
  */
 public interface JIRAConfiguration {
 
-    public String getJiraUser();
+    String getJiraUser();
 
-    public String getJiraPassword();
+    String getJiraPassword();
 
-    public String getJiraWebserviceUrl();
+    String getJiraWebserviceUrl();
 
+    boolean isWikiRenderedActive();
 }

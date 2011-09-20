@@ -72,6 +72,7 @@ public class WhenUpdatingCommentsInJIRA {
 
     @Test
     public void when_a_test_with_a_referenced_issue_finishes_the_plugin_should_add_a_new_comment_for_this_issue() {
+        System.setProperty("thucydides.public.url", "http://my.server/myproject/thucydides");
         JiraListener listener = new JiraListener(issueTracker);
 
         listener.testSuiteStarted(SampleTestSuite.class);
@@ -83,6 +84,7 @@ public class WhenUpdatingCommentsInJIRA {
 
     @Test
     public void when_a_test_with_several_referenced_issues_finishes_the_plugin_should_add_a_new_comment_for_each_issue() {
+        System.setProperty("thucydides.public.url", "http://my.server/myproject/thucydides");
         JiraListener listener = new JiraListener(issueTracker);
 
         listener.testSuiteStarted(SampleTestSuite.class);
@@ -101,6 +103,7 @@ public class WhenUpdatingCommentsInJIRA {
 
     @Test
     public void should_add_one_comment_even_when_several_steps_are_called() {
+        System.setProperty("thucydides.public.url", "http://my.server/myproject/thucydides");
         JiraListener listener = new JiraListener(issueTracker);
 
         listener.testSuiteStarted(SampleTestSuite.class);
@@ -185,6 +188,17 @@ public class WhenUpdatingCommentsInJIRA {
         verify(issueTracker, never()).addComment(anyString(), anyString());
     }
 
+
+    @Test
+    public void should_skip_JIRA_updates_if_no_public_url_is_specified() {
+
+        JiraListener listener = new JiraListener(issueTracker);
+        listener.testSuiteStarted(SampleTestSuite.class);
+        listener.testStarted("issue_123_should_be_fixed_now");
+        listener.testFinished(result);
+
+        verify(issueTracker, never()).addComment(anyString(), anyString());
+    }
 
     @Test
     public void default_listeners_should_use_default_issue_tracker() {

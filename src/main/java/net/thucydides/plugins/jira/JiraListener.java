@@ -8,9 +8,10 @@ import net.thucydides.core.steps.ExecutedStepDescription;
 import net.thucydides.core.steps.StepFailure;
 import net.thucydides.core.steps.StepListener;
 import net.thucydides.core.steps.TestStepResult;
+import net.thucydides.plugins.jira.guice.Injectors;
 import net.thucydides.plugins.jira.model.IssueComment;
 import net.thucydides.plugins.jira.model.IssueTracker;
-import net.thucydides.plugins.jira.service.JiraIssueTracker;
+import net.thucydides.plugins.jira.service.JIRAConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,13 +31,15 @@ public class JiraListener implements StepListener {
     public Story currentStory;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JiraListener.class);
+    private final JIRAConfiguration configuration;
 
     public JiraListener(IssueTracker issueTracker) {
         this.issueTracker = issueTracker;
+        configuration = Injectors.getInjector().getInstance(JIRAConfiguration.class);
     }
 
     public JiraListener() {
-        this(new JiraIssueTracker());
+        this(Injectors.getInjector().getInstance(IssueTracker.class));
     }
 
     protected IssueTracker getIssueTracker() {
@@ -54,8 +57,14 @@ public class JiraListener implements StepListener {
     }
 
     public void testStarted(final String testName) {
-        List<String> issues = stripInitialHashesFrom(forClass(currentTestCase).getAnnotatedIssuesForMethod(testName));
-        for(String issueId : issues) {
+        if (issueTrackerUpdatedActivated()) {
+            List<String> issues = stripInitialHashesFrom(forClass(currentTestCase).getAnnotatedIssuesForMethod(testName));
+            updateIssues(issues);
+        }
+    }
+
+    private void updateIssues(List<String> issues) {
+        for (String issueId : issues) {
             logIssueTracking(issueId);
             if (!dryRun()) {
                 addOrUpdateCommentFor(issueId);
@@ -63,12 +72,15 @@ public class JiraListener implements StepListener {
         }
     }
 
+    private boolean issueTrackerUpdatedActivated() {
+        return (ThucydidesSystemProperty.getValue(ThucydidesSystemProperty.PUBLIC_URL) != null);
+    }
+
     private void addOrUpdateCommentFor(final String issueId) {
         List<IssueComment> comments = issueTracker.getCommentsFor(issueId);
         IssueComment existingComment = findExistingCommentIn(comments);
         if (existingComment != null) {
-            IssueComment updatedComment = new IssueComment(existingComment.getId(),
-                                                           linkToReport(),
+            IssueComment updatedComment = new IssueComment(existingComment.getId(), linkToReport(),
                                                            existingComment.getAuthor());
             issueTracker.updateComment(updatedComment);
         } else {
@@ -78,7 +90,7 @@ public class JiraListener implements StepListener {
     }
 
     private IssueComment findExistingCommentIn(List<IssueComment> comments) {
-        for(IssueComment comment : comments) {
+        for (IssueComment comment : comments) {
             if (comment.getText().contains("Thucydides Test Results")) {
                 return comment;
             }
@@ -101,7 +113,19 @@ public class JiraListener implements StepListener {
     private String linkToReport() {
         String reportUrl = ThucydidesSystemProperty.getValue(ThucydidesSystemProperty.PUBLIC_URL);
         String reportName = Stories.reportFor(storyUnderTest(), ReportType.HTML);
-        return "[Thucydides Test Results|" + reportUrl + "/" + reportName + "]";
+        return formatTestResultsLink(reportUrl, reportName);
+    }
+
+    public String formatTestResultsLink(String reportUrl, String reportName) {
+        if (isWikiRenderedActive()) {
+            return "[Thucydides Test Results|" + reportUrl + "/" + reportName + "]";
+        } else {
+            return "Thucydides Test Results: " + reportUrl + "/" + reportName;
+        }
+    }
+
+    private boolean isWikiRenderedActive() {
+        return configuration.isWikiRenderedActive();
     }
 
     private Story storyUnderTest() {
@@ -114,41 +138,41 @@ public class JiraListener implements StepListener {
 
     private List<String> stripInitialHashesFrom(final List<String> issueNumbers) {
         List<String> issues = new ArrayList<String>();
-        for(String issueNumber : issueNumbers) {
+        for (String issueNumber : issueNumbers) {
             issues.add(issueNumber.substring(1));
         }
         return issues;
     }
 
-    public void testFinished(TestStepResult testStepResult){
-        
+    public void testFinished(TestStepResult testStepResult) {
+
     }
 
     public void stepStarted(ExecutedStepDescription executedStepDescription) {
-        
+
     }
 
     public void stepFailed(StepFailure stepFailure) {
-        
+
     }
 
     public void stepIgnored() {
-        
+
     }
 
     public void stepPending() {
-        
+
     }
 
     public void stepFinished() {
-        
+
     }
 
     public void testFailed(Throwable throwable) {
-        
+
     }
 
     public void testIgnored() {
-        
+
     }
 }
