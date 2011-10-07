@@ -1,6 +1,7 @@
 package net.thucydides.plugins.jira;
 
 import net.thucydides.core.annotations.Feature;
+import net.thucydides.core.annotations.Pending;
 import net.thucydides.core.annotations.Story;
 import net.thucydides.core.annotations.Title;
 import net.thucydides.core.junit.rules.SaveWebdriverSystemPropertiesRule;
@@ -205,5 +206,56 @@ public class WhenUpdatingCommentsInJIRA {
         JiraListener listener = new JiraListener();
 
         assertThat(listener.getIssueTracker(), is(notNullValue()));
+    }
+
+    @Test
+    public void a_successful_test_should_resolve_an_open_issue() {
+
+        when(issueTracker.getStatusFor("MYPROJECT-123")).thenReturn("Open");
+
+        JiraListener listener = new JiraListener(issueTracker);
+        System.setProperty("thucydides.public.url", "http://my.server/myproject/thucydides");
+        listener.testSuiteStarted(SampleTestSuite.class);
+        listener.testStarted("issue_123_should_be_fixed_now");
+
+        when(result.wasSuccessful()).thenReturn(true);
+        listener.testFinished(result);
+
+        //verify(issueTracker).updateStatus("Resolved");
+    }
+
+    @Test
+    public void a_successful_test_should_resolve_an_in_progress_issue() {
+
+    }
+
+    @Test
+    public void a_successful_test_should_resolve_a_reopened_issue() {
+
+    }
+
+    @Test
+    public void a_failing_test_should_open_a_resolved_issue() {
+    }
+
+    @Test
+    public void a_failing_test_should_open_a_closed_issue() {
+    }
+
+    @Test
+    public void a_failing_test_should_leave_an_open_issue_open() {
+    }
+
+    @Test
+    public void a_failing_test_should_leave_a_reopened_issue_reopened() {
+    }
+
+    @Test
+    public void a_failing_test_should_leave_in_progress_issue_in_progress() {
+    }
+
+    @Test
+    public void should_maintain_a_stability_score_based_on_the_number_of_recently_passed_tests() {
+
     }
 }

@@ -16,7 +16,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 
-public class WhenAddingACommentUsingTheJiraTracker {
+public class WhenUpdateingIssuesUsingTheJiraTracker {
 
     IssueTracker tracker;
 
@@ -80,6 +80,36 @@ public class WhenAddingACommentUsingTheJiraTracker {
 
         comments = tracker.getCommentsFor(issueKey);
         assertThat(comments.get(0).getText(), is("Integration test comment 4"));
+    }
+
+    @Test
+    public void should_be_able_to_read_the_status_of_an_issue_in_human_readable_form() throws Exception {
+
+        String status = tracker.getStatusFor(issueKey);
+
+        assertThat(status, is("Open"));
+    }
+
+    @Test
+    public void should_be_able_to_update_the_status_of_an_issue() throws Exception {
+        String status = tracker.getStatusFor(issueKey);
+        assertThat(status, is("Open"));
+
+        tracker.updateStatus(issueKey, "Resolve Issue");
+
+        String newStatus = tracker.getStatusFor(issueKey);
+        assertThat(newStatus, is("Resolved"));
+    }
+
+    @Test
+    public void should_not_be_able_to_update_the_status_of_an_issue_if_transition_is_not_allowed() throws Exception {
+        String status = tracker.getStatusFor(issueKey);
+        assertThat(status, is("Open"));
+
+        tracker.updateStatus(issueKey, "Reopen Issue");
+
+        String newStatus = tracker.getStatusFor(issueKey);
+        assertThat(newStatus, is("Open"));
     }
 
 }

@@ -7,6 +7,7 @@ import org.junit.Test;
 import thucydides.plugins.jira.soap.RemoteComment;
 import thucydides.plugins.jira.soap.RemoteIssue;
 import thucydides.plugins.jira.soap.RemoteProject;
+import thucydides.plugins.jira.soap.RemoteStatus;
 
 import java.net.URL;
 
@@ -110,6 +111,18 @@ public class WhenFindingAnIssueOnTheJIRAServer {
 
         RemoteComment[] comments = session.getJiraSoapService().getComments(token, issueKey);
         assertThat(comments.length, is(2));
-
     }
+
+    @Test
+    public void should_be_able_to_read_the_status_of_an_issue() throws Exception {
+
+        SOAPSession session = SOAPSession.openConnectionTo(new URL(JIRA_WEBSERVICE_URL))
+                                             .usingCredentials("bruce", "batm0bile");
+
+        String token = session.getAuthenticationToken();
+        String status = session.getJiraSoapService().getIssue(token, issueKey).getStatus();
+
+        assertThat(status, is("1"));
+    }
+
 }

@@ -8,14 +8,24 @@ import net.thucydides.plugins.jira.guice.Injectors;
 import net.thucydides.plugins.jira.model.IssueComment;
 import net.thucydides.plugins.jira.model.IssueTracker;
 import net.thucydides.plugins.jira.model.IssueTrackerUpdateException;
+import sun.misc.JavaSecurityProtectionDomainAccess;
 import thucydides.plugins.jira.soap.RemoteComment;
+import thucydides.plugins.jira.soap.RemoteFieldValue;
+import thucydides.plugins.jira.soap.RemoteIssue;
+import thucydides.plugins.jira.soap.RemoteNamedObject;
+import thucydides.plugins.jira.soap.RemoteStatus;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static ch.lambdaj.Lambda.convert;
 import static ch.lambdaj.Lambda.extract;
@@ -127,7 +137,117 @@ public class JiraIssueTracker implements IssueTracker {
         }
     }
 
-    private RemoteComment newCommentWithText(String commentText) {
+    /**
+     * Return the current status for a given JIRA issue.
+     * Note that the status value depends on the issue workflow, so can be very variable.
+     * @param issueKey
+     * @return
+     * @throws IssueTrackerUpdateException
+     */
+    public String getStatusFor(final String issueKey) throws IssueTrackerUpdateException {
+        try {
+            String token = getSoapSession().getAuthenticationToken();
+
+            RemoteIssue issue = getSoapSession().getJiraSoapService().getIssue(token, issueKey);
+            checkThatIssueExists(issue, issueKey);
+            return getStatusLabel(issue);
+
+        } catch (IOException e) {
+            throw new IssueTrackerUpdateException("Could not update JIRA using URL ("
+                                                  + getJiraWebserviceUrl() + ")", e);
+        }
+    }
+
+    public void updateStatus(final String issueKey, final String workflowAction) throws IssueTrackerUpdateException {
+        try {
+            String token = getSoapSession().getAuthenticationToken();
+            RemoteIssue issue = getSoapSession().getJiraSoapService().getIssue(token, issueKey);
+            checkThatIssueExists(issue, issueKey);
+
+            String actionId = getAvailableActions(issueKey).get(workflowAction);
+            checkThatActionExists(actionId, workflowAction);
+
+            getSoapSession().getJiraSoapService().progressWorkflowAction(token, issueKey, actionId, null);
+
+        } catch (IOException e) {
+            throw new IssueTrackerUpdateException("Could not update JIRA using URL ("
+                                                  + getJiraWebserviceUrl() + ")", e);
+        }
+    }
+
+    private void checkThatActionExists(String actionId, String workflowAction) {
+    }
+
+    private String getStatusLabel(final RemoteIssue issue) {
+        return getStatusCodeMap().get(issue.getStatus());
+    }
+
+    private Map<String, String> getAvailableActions(final String issueKey) {
+        Map<String, String> availableActionMap = null;
+        if (availableActionMap == null) {
+            availableActionMap = new HashMap<String, String>();
+            try {
+                String token = getSoapSession().getAuthenticationToken();
+                RemoteNamedObject[] actions = getSoapSession().getJiraSoapService().getAvailableActions(token, issueKey);
+                for(RemoteNamedObject action : actions) {
+                    availableActionMap.put(action.getName(), action.getId());
+                }
+            } catch (IOException e) {
+                throw new IssueTrackerUpdateException("Could not read JIRA using URL ("
+                                                      + getJiraWebserviceUrl() + ")", e);
+            }
+        }
+        return availableActionMap;
+    }
+
+    private Map<String, String> statusCodeMap = null;
+    private Map<String, String> getStatusCodeMap() {
+        if (statusCodeMap == null) {
+            statusCodeMap = new HashMap<String, String>();
+            try {
+                String token = getSoapSession().getAuthenticationToken();
+                RemoteStatus[] statuses = getSoapSession().getJiraSoapService().getStatuses(token);
+                for(RemoteStatus status : statuses) {
+                    statusCodeMap.put(status.getId(), status.getName());
+                }
+            } catch (IOException e) {
+                throw new IssueTrackerUpdateException("Could not read JIRA using URL ("
+                                                      + getJiraWebserviceUrl() + ")", e);
+            }
+        }
+        return statusCodeMap;
+    }
+
+
+    private Map<String, String> statusLabelMap = null;
+    private String getStatusId(final String statusLabel) {
+        return getStatusLabelMap().get(statusLabel);
+    }
+
+    private Map<String, String> getStatusLabelMap() {
+        if (statusLabelMap == null) {
+            statusLabelMap = new HashMap<String, String>();
+            try {
+                String token = getSoapSession().getAuthenticationToken();
+                RemoteStatus[] statuses = getSoapSession().getJiraSoapService().getStatuses(token);
+                for(RemoteStatus status : statuses) {
+                    statusLabelMap.put(status.getName(), status.getId());
+                }
+            } catch (IOException e) {
+                throw new IssueTrackerUpdateException("Could not read JIRA using URL ("
+                                                      + getJiraWebserviceUrl() + ")", e);
+            }
+        }
+        return statusLabelMap;
+    }
+
+    private void checkThatIssueExists(final RemoteIssue issue, final String issueKey) {
+        if (issue == null) {
+            throw new NoSuchIssueException("No issue found for " + issueKey);
+        }
+    }
+
+    private RemoteComment newCommentWithText(final String commentText) {
         RemoteComment comment = new RemoteComment();
         comment.setAuthor(getJiraUser());
         comment.setBody(commentText);
