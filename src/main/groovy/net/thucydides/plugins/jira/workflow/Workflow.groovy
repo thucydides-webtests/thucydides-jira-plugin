@@ -11,20 +11,30 @@ import net.thucydides.plugins.jira.workflow.TransitionBuilder.TransitionSetMap
  */
 class Workflow {
 
+    public static final String WORKFLOW_CONFIGURATION_PROPERTY = "thucydides.jira.workflow"
+
+    private final String name;
+    private final boolean active;
+
     def builder = new TransitionBuilder()
 
-    static Workflow loadFrom(final InputStream configFile) {
-        return new Workflow(configFile.text)
-    }
-
-    protected Workflow(String configuration) {
-
+    protected Workflow(String name, String configuration, boolean active) {
+        this.name = name;
+        this.active = active;
         Script s = new GroovyClassLoader().parseClass(configuration).newInstance()
         s.binding = new BuilderBinding(builder:builder)
         s.run()
     }
 
-    public TransitionSetMap getTransactions() {
+    public String getName() {
+        return name;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public TransitionSetMap getTransitions() {
         builder.getTransitionSetMap()
     }
 }

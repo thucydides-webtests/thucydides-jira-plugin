@@ -5,9 +5,11 @@ import net.thucydides.core.annotations.Pending;
 import net.thucydides.core.annotations.Story;
 import net.thucydides.core.annotations.Title;
 import net.thucydides.core.junit.rules.SaveWebdriverSystemPropertiesRule;
+import net.thucydides.core.model.TestOutcome;
+import net.thucydides.core.model.TestResult;
+import net.thucydides.core.model.TestStep;
 import net.thucydides.core.steps.ExecutedStepDescription;
 import net.thucydides.core.steps.StepFailure;
-import net.thucydides.core.steps.TestStepResult;
 import net.thucydides.plugins.jira.model.IssueComment;
 import net.thucydides.plugins.jira.model.IssueTracker;
 import org.junit.After;
@@ -69,7 +71,13 @@ public class WhenUpdatingCommentsInJIRA {
     @Mock
     IssueTracker issueTracker;
 
-    @Mock TestStepResult result;
+    private TestOutcome newTestOutcome(String testMethod, TestResult testResult) {
+        TestOutcome result = TestOutcome.forTest(testMethod, SampleTestSuite.class);
+        TestStep step = new TestStep("a narrative description");
+        step.setResult(testResult);
+        result.recordStep(step);
+        return result;
+    }
 
     @Test
     public void when_a_test_with_a_referenced_issue_finishes_the_plugin_should_add_a_new_comment_for_this_issue() {
@@ -78,7 +86,7 @@ public class WhenUpdatingCommentsInJIRA {
 
         listener.testSuiteStarted(SampleTestSuite.class);
         listener.testStarted("issue_123_should_be_fixed_now");
-        listener.testFinished(result);
+        listener.testFinished(newTestOutcome("issue_123_should_be_fixed_now", TestResult.SUCCESS));
 
         verify(issueTracker).addComment(eq("MYPROJECT-123"), anyString());
     }
@@ -90,7 +98,7 @@ public class WhenUpdatingCommentsInJIRA {
 
         listener.testSuiteStarted(SampleTestSuite.class);
         listener.testStarted("issue_123_and_456_should_be_fixed_now");
-        listener.testFinished(result);
+        listener.testFinished(newTestOutcome("issue_123_and_456_should_be_fixed_now", TestResult.SUCCESS));
 
         verify(issueTracker).addComment(eq("MYPROJECT-123"), anyString());
         verify(issueTracker).addComment(eq("MYPROJECT-456"), anyString());
@@ -124,7 +132,7 @@ public class WhenUpdatingCommentsInJIRA {
 
         listener.testFailed(new AssertionError("Oops!"));
 
-        listener.testFinished(result);
+        listener.testFinished(newTestOutcome("issue_123_and_456_should_be_fixed_now", TestResult.FAILURE));
 
         listener.testStarted("anotherTest");
         listener.testIgnored();
@@ -140,7 +148,7 @@ public class WhenUpdatingCommentsInJIRA {
 
         listener.testSuiteStarted(net.thucydides.core.model.Story.from(SampleTestSuite.class));
         listener.testStarted("Fixes issues #MYPROJECT-123");
-        listener.testFinished(result);
+        listener.testFinished(newTestOutcome("Fixes issues #MYPROJECT-123", TestResult.FAILURE));
 
         verify(issueTracker).addComment(eq("MYPROJECT-123"),
                 contains("[Thucydides Test Results|http://my.server/myproject/thucydides/sample_test_suite.html]"));
@@ -152,7 +160,7 @@ public class WhenUpdatingCommentsInJIRA {
         System.setProperty("thucydides.public.url", "http://my.server/myproject/thucydides");
         listener.testSuiteStarted(SampleTestSuite.class);
         listener.testStarted("issue_123_should_be_fixed_now");
-        listener.testFinished(result);
+        listener.testFinished(newTestOutcome("issue_123_should_be_fixed_now", TestResult.FAILURE));
 
         verify(issueTracker).addComment(eq("MYPROJECT-123"),
                 contains("[Thucydides Test Results|http://my.server/myproject/thucydides/sample_story.html]"));
@@ -169,7 +177,7 @@ public class WhenUpdatingCommentsInJIRA {
         System.setProperty("thucydides.public.url", "http://my.server/myproject/thucydides");
         listener.testSuiteStarted(SampleTestSuite.class);
         listener.testStarted("issue_123_should_be_fixed_now");
-        listener.testFinished(result);
+        listener.testFinished(newTestOutcome("issue_123_should_be_fixed_now", TestResult.FAILURE));
 
         verify(issueTracker).updateComment(any(IssueComment.class));
     }
@@ -184,7 +192,7 @@ public class WhenUpdatingCommentsInJIRA {
         JiraListener listener = new JiraListener(issueTracker);
         listener.testSuiteStarted(SampleTestSuite.class);
         listener.testStarted("issue_123_should_be_fixed_now");
-        listener.testFinished(result);
+        listener.testFinished(newTestOutcome("issue_123_should_be_fixed_now", TestResult.FAILURE));
 
         verify(issueTracker, never()).addComment(anyString(), anyString());
     }
@@ -196,7 +204,7 @@ public class WhenUpdatingCommentsInJIRA {
         JiraListener listener = new JiraListener(issueTracker);
         listener.testSuiteStarted(SampleTestSuite.class);
         listener.testStarted("issue_123_should_be_fixed_now");
-        listener.testFinished(result);
+        listener.testFinished(newTestOutcome("issue_123_should_be_fixed_now", TestResult.FAILURE));
 
         verify(issueTracker, never()).addComment(anyString(), anyString());
     }
@@ -206,56 +214,5 @@ public class WhenUpdatingCommentsInJIRA {
         JiraListener listener = new JiraListener();
 
         assertThat(listener.getIssueTracker(), is(notNullValue()));
-    }
-
-    @Test
-    public void a_successful_test_should_resolve_an_open_issue() {
-
-        when(issueTracker.getStatusFor("MYPROJECT-123")).thenReturn("Open");
-
-        JiraListener listener = new JiraListener(issueTracker);
-        System.setProperty("thucydides.public.url", "http://my.server/myproject/thucydides");
-        listener.testSuiteStarted(SampleTestSuite.class);
-        listener.testStarted("issue_123_should_be_fixed_now");
-
-        when(result.wasSuccessful()).thenReturn(true);
-        listener.testFinished(result);
-
-        //verify(issueTracker).updateStatus("Resolved");
-    }
-
-    @Test
-    public void a_successful_test_should_resolve_an_in_progress_issue() {
-
-    }
-
-    @Test
-    public void a_successful_test_should_resolve_a_reopened_issue() {
-
-    }
-
-    @Test
-    public void a_failing_test_should_open_a_resolved_issue() {
-    }
-
-    @Test
-    public void a_failing_test_should_open_a_closed_issue() {
-    }
-
-    @Test
-    public void a_failing_test_should_leave_an_open_issue_open() {
-    }
-
-    @Test
-    public void a_failing_test_should_leave_a_reopened_issue_reopened() {
-    }
-
-    @Test
-    public void a_failing_test_should_leave_in_progress_issue_in_progress() {
-    }
-
-    @Test
-    public void should_maintain_a_stability_score_based_on_the_number_of_recently_passed_tests() {
-
     }
 }

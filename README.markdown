@@ -64,3 +64,46 @@ If you do not want Thucydides to update the JIRA issues for a particular run (e.
     $mvn verify -Dthucydides.skip.jira.updates=true
 
 This will simply write the relevant issue numbers to the log rather than trying to connect to JIRA.
+
+You can also configure the plugin to update the status of JIRA issues. This is deactivated by default: to use this
+option, you need to set the 'thucydides.jira.workflow.active' option to 'true', e.g.
+
+    $mvn verify -Dthucydides.jira.workflow.active=true
+
+The default configuration will work with the default JIRA workflow: open or in progress issues associated with successful tests will be
+resolved, and closed or resolved issues associated with failing tests will be reopened. If you are using a customized
+workflow, or want to modify the way the transitions work, you can write your own workflow configuration. Workflow
+configuration uses a simple Groovy DSL. The following is an example of the configuration file used for the default
+workflow:
+
+    when 'Open', {
+        'success' should: 'Resolve Issue'
+    }
+
+    when 'Reopened', {
+        'success' should: 'Resolve Issue'
+    }
+
+    when 'Resolved', {
+        'failure' should: 'Reopen Issue'
+    }
+
+    when 'In Progress', {
+        'success' should: ['Stop Progress','Resolve Issue']
+    }
+
+    when 'Closed', {
+        'failure' should: 'Reopen Issue'
+    }
+
+You can write your own configuration file and place it on the classpath of your test project (e.g. in the `resources` directory). Then
+you can override the default configuration by using the 'thucydides.jira.workflow' property, e.g.
+
+    $mvn verify -Dthucydides.jira.workflow=my-workflow.groovy
+
+Alternatively, you can simply create a file called 'jira-workflow.groovy' and place it somewhere on your classpath (e.g. in the 'src/test/resources' directory).
+Thucydides will then use this workflow. In both these cases, you don't need to explicitly set the 'thucydides.jira.workflow.active'
+property.
+
+
+

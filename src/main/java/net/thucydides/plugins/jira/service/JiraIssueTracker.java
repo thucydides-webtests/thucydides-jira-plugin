@@ -158,16 +158,16 @@ public class JiraIssueTracker implements IssueTracker {
         }
     }
 
-    public void updateStatus(final String issueKey, final String workflowAction) throws IssueTrackerUpdateException {
+    public void doTransition(final String issueKey, final String workflowAction) throws IssueTrackerUpdateException {
         try {
             String token = getSoapSession().getAuthenticationToken();
             RemoteIssue issue = getSoapSession().getJiraSoapService().getIssue(token, issueKey);
             checkThatIssueExists(issue, issueKey);
 
             String actionId = getAvailableActions(issueKey).get(workflowAction);
-            checkThatActionExists(actionId, workflowAction);
-
-            getSoapSession().getJiraSoapService().progressWorkflowAction(token, issueKey, actionId, null);
+            if (actionId != null) {
+                getSoapSession().getJiraSoapService().progressWorkflowAction(token, issueKey, actionId, null);
+            }
 
         } catch (IOException e) {
             throw new IssueTrackerUpdateException("Could not update JIRA using URL ("

@@ -1,17 +1,22 @@
 package net.thucydides.plugins.jira;
 
+import net.thucydides.core.ThucydidesSystemProperties;
 import net.thucydides.core.ThucydidesSystemProperty;
 import net.thucydides.core.model.ReportNamer.ReportType;
 import net.thucydides.core.model.Stories;
 import net.thucydides.core.model.Story;
+import net.thucydides.core.model.TestOutcome;
+import net.thucydides.core.model.TestResult;
+import net.thucydides.core.reports.html.Formatter;
 import net.thucydides.core.steps.ExecutedStepDescription;
 import net.thucydides.core.steps.StepFailure;
 import net.thucydides.core.steps.StepListener;
-import net.thucydides.core.steps.TestStepResult;
 import net.thucydides.plugins.jira.guice.Injectors;
 import net.thucydides.plugins.jira.model.IssueComment;
 import net.thucydides.plugins.jira.model.IssueTracker;
 import net.thucydides.plugins.jira.service.JIRAConfiguration;
+import net.thucydides.plugins.jira.workflow.Workflow;
+import net.thucydides.plugins.jira.workflow.WorkflowLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,10 +37,17 @@ public class JiraListener implements StepListener {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JiraListener.class);
     private final JIRAConfiguration configuration;
+    private Workflow workflow;
 
     public JiraListener(IssueTracker issueTracker) {
         this.issueTracker = issueTracker;
         configuration = Injectors.getInjector().getInstance(JIRAConfiguration.class);
+        WorkflowLoader loader = Injectors.getInjector().getInstance(WorkflowLoader.class);
+        workflow = loader.load();
+    }
+
+    protected boolean shouldUpdateWorkflow() {
+        return (ThucydidesSystemProperties.getProperties().getValue(ThucydidesSystemProperty.PUBLIC_URL) != null);
     }
 
     public JiraListener() {
@@ -44,6 +56,10 @@ public class JiraListener implements StepListener {
 
     protected IssueTracker getIssueTracker() {
         return issueTracker;
+    }
+
+    protected Workflow getWorkflow() {
+        return workflow;
     }
 
     public void testSuiteStarted(final Class<?> testCase) {
@@ -57,23 +73,47 @@ public class JiraListener implements StepListener {
     }
 
     public void testStarted(final String testName) {
-        if (issueTrackerUpdatedActivated()) {
-            List<String> issues = stripInitialHashesFrom(forClass(currentTestCase).getAnnotatedIssuesForMethod(testName));
-            updateIssues(issues);
+    }
+
+
+    public void testFinished(TestOutcome result) {
+
+        if (shouldUpdateWorkflow()) {
+            List<String> issues = stripInitialHashesFrom(issueReferencesIn(result));
+            updateIssues(issues, result.getResult());
         }
     }
 
-    private void updateIssues(List<String> issues) {
+    private List<String> issueReferencesIn(TestOutcome result) {
+        if (currentTestCase != null) {
+            return forClass(currentTestCase).getIssuesForMethod(result.getMethodName());
+        } else {
+            return Formatter.issuesIn(result.getTitle());
+        }
+
+    }
+
+    private void updateIssues(List<String> issues, TestResult testResult) {
         for (String issueId : issues) {
             logIssueTracking(issueId);
             if (!dryRun()) {
                 addOrUpdateCommentFor(issueId);
+                if (getWorkflow().isActive()) {
+                    updateIssueStatusFor(issueId, testResult);
+                }
             }
         }
     }
 
-    private boolean issueTrackerUpdatedActivated() {
-        return (ThucydidesSystemProperty.getValue(ThucydidesSystemProperty.PUBLIC_URL) != null);
+    private void updateIssueStatusFor(final String issueId, final TestResult testResult) {
+        String currentStatus = issueTracker.getStatusFor(issueId);
+
+         List<String> transitions
+                            = getWorkflow().getTransitions().forTestResult(testResult).whenIssueIs(currentStatus);
+
+        for(String transition : transitions) {
+            issueTracker.doTransition(issueId, transition);
+        }
     }
 
     private void addOrUpdateCommentFor(final String issueId) {
@@ -111,7 +151,7 @@ public class JiraListener implements StepListener {
     }
 
     private String linkToReport() {
-        String reportUrl = ThucydidesSystemProperty.getValue(ThucydidesSystemProperty.PUBLIC_URL);
+        String reportUrl = ThucydidesSystemProperties.getProperties().getValue(ThucydidesSystemProperty.PUBLIC_URL);
         String reportName = Stories.reportFor(storyUnderTest(), ReportType.HTML);
         return formatTestResultsLink(reportUrl, reportName);
     }
@@ -138,14 +178,16 @@ public class JiraListener implements StepListener {
 
     private List<String> stripInitialHashesFrom(final List<String> issueNumbers) {
         List<String> issues = new ArrayList<String>();
-        for (String issueNumber : issueNumbers) {
-            issues.add(issueNumber.substring(1));
+        if (issueNumbers != null) {
+            for (String issueNumber : issueNumbers) {
+                if (issueNumber.startsWith("#")) {
+                    issues.add(issueNumber.substring(1));
+                } else {
+                    issues.add(issueNumber);
+                }
+            }
         }
         return issues;
-    }
-
-    public void testFinished(TestStepResult testStepResult) {
-
     }
 
     public void stepStarted(ExecutedStepDescription executedStepDescription) {

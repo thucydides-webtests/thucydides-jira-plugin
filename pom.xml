@@ -49,7 +49,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <thucydides.version>0.4.2</thucydides.version>
+        <thucydides.version>0.4.12-SNAPSHOT</thucydides.version>
         <surefire.version>2.9</surefire.version>
         <groovy.version>1.8.2</groovy.version>
     </properties>
@@ -184,18 +184,6 @@
                     </dependency>
                 </dependencies>
             </plugin>
-            <!--<plugin>-->
-                <!--<groupId>org.spockframework</groupId>-->
-                <!--<artifactId>spock-maven</artifactId>-->
-                <!--<version>0.5-groovy-1.8</version>-->
-                <!--<executions>-->
-                    <!--<execution>-->
-                        <!--<goals>-->
-                            <!--<goal>find-specs</goal>-->
-                        <!--</goals>-->
-                    <!--</execution>-->
-                <!--</executions>-->
-            <!--</plugin>-->
         </plugins>
     </build>
     <dependencies>

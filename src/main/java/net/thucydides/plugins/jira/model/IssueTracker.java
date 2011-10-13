@@ -21,6 +21,6 @@ public interface IssueTracker {
 
     public String getStatusFor(final String issueKey) throws IssueTrackerUpdateException;
 
-    public void updateStatus(final String issueKey, final String status) throws IssueTrackerUpdateException;
+    public void doTransition(final String issueKey, final String status) throws IssueTrackerUpdateException;
 
 }

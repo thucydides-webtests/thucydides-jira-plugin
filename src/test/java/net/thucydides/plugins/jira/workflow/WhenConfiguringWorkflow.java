@@ -4,7 +4,6 @@ import net.thucydides.core.model.TestResult;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 
-import java.io.InputStream;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -17,17 +16,17 @@ public class WhenConfiguringWorkflow {
     @Test
     public void should_be_able_to_load_a_workflow_configuration() {
 
-        InputStream inputStream = Thread.currentThread().getContextClassLoader()
-                                                         .getResourceAsStream("default-workflow.groovy");
-        Workflow workflow = Workflow.loadFrom(inputStream);
+        WorkflowLoader loader = new ClasspathWorkflowLoader("default-workflow.groovy");
+
+        Workflow workflow = loader.load();
         assertThat(workflow, is(notNullValue()));
 
-        List<String> transitionSetMap = workflow.getTransactions()
+        List<String> transitionSetMap = workflow.getTransitions()
                                                 .forTestResult(TestResult.SUCCESS)
                                                 .whenIssueIs("In Progress");
 
         assertThat(transitionSetMap.size(), is(2));
-        assertThat(transitionSetMap, Matchers.hasItems("Stop Progress","Resolve issue"));
+        assertThat(transitionSetMap, Matchers.hasItems("Stop Progress","Resolve Issue"));
 
     }
 
@@ -35,14 +34,14 @@ public class WhenConfiguringWorkflow {
     @Test
     public void should_be_able_to_configure_a_simple_transition() {
 
-        Workflow workflow = new Workflow(
+        Workflow workflow = new Workflow("testflow",
                 " when 'Open', {\n" +
                 "    'success' should: 'Resolve issue'\n" +
-                " }");
+                " }", true);
 
         assertThat(workflow, is(notNullValue()));
 
-        List<String> transitionSetMap = workflow.getTransactions()
+        List<String> transitionSetMap = workflow.getTransitions()
                                                 .forTestResult(TestResult.SUCCESS)
                                                 .whenIssueIs("Open");
 
@@ -54,7 +53,7 @@ public class WhenConfiguringWorkflow {
     @Test
     public void should_be_able_to_configure_multiple_transitions() {
 
-        Workflow workflow = new Workflow(
+        Workflow workflow = new Workflow("testflow",
                 "             when 'Open', {\n" +
                 "                'success' should: 'Resolve issue'\n" +
                 "            }\n" +
@@ -65,11 +64,11 @@ public class WhenConfiguringWorkflow {
                 "\n" +
                 "            when 'In Progress', {\n" +
                 "                'success' should: ['Stop Progress','Resolve issue']\n" +
-                "            }");
+                "            }", true);
 
         assertThat(workflow, is(notNullValue()));
 
-        List<String> transitionSetMap = workflow.getTransactions()
+        List<String> transitionSetMap = workflow.getTransitions()
                                                 .forTestResult(TestResult.SUCCESS)
                                                 .whenIssueIs("In Progress");
 

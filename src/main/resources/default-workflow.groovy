@@ -1,11 +1,19 @@
 when 'Open', {
-    'success' should: 'Resolve issue'
+    'success' should: 'Resolve Issue'
+}
+
+when 'Reopened', {
+    'success' should: 'Resolve Issue'
 }
 
 when 'Resolved', {
-    'failure' should: 'Reopen issue'
+    'failure' should: 'Reopen Issue'
 }
 
 when 'In Progress', {
-    'success' should: ['Stop Progress','Resolve issue']
+    'success' should: ['Stop Progress','Resolve Issue']
+}
+
+when 'Closed', {
+    'failure' should: 'Reopen Issue'
 }

@@ -43,7 +43,11 @@ class TransitionBuilder extends BuilderSupport {
             }
             transitionsByTestResult[testResult]
         }
-    }
+
+
+        public String toString ( ) {
+            transitionsByTestResult.toMapString()
+        }}
 
     public class TransitionsForOutcome {
 
@@ -60,7 +64,11 @@ class TransitionBuilder extends BuilderSupport {
         void setTransitions(String status, List<String> transitions) {
             transitionMap[status] = transitions
         }
-    }
+
+
+        public String toString ( ) {
+            transitionMap.toMapString()
+        }}
 
 
 }

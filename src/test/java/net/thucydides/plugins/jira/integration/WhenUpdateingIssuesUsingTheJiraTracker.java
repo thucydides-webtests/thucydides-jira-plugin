@@ -1,5 +1,9 @@
 package net.thucydides.plugins.jira.integration;
 
+import net.thucydides.core.model.TestOutcome;
+import net.thucydides.core.model.TestResult;
+import net.thucydides.core.model.TestStep;
+import net.thucydides.plugins.jira.JiraListener;
 import net.thucydides.plugins.jira.model.IssueComment;
 import net.thucydides.plugins.jira.model.IssueTracker;
 import net.thucydides.plugins.jira.service.JIRAConfiguration;
@@ -14,6 +18,7 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class WhenUpdateingIssuesUsingTheJiraTracker {
@@ -95,7 +100,7 @@ public class WhenUpdateingIssuesUsingTheJiraTracker {
         String status = tracker.getStatusFor(issueKey);
         assertThat(status, is("Open"));
 
-        tracker.updateStatus(issueKey, "Resolve Issue");
+        tracker.doTransition(issueKey, "Resolve Issue");
 
         String newStatus = tracker.getStatusFor(issueKey);
         assertThat(newStatus, is("Resolved"));
@@ -106,7 +111,7 @@ public class WhenUpdateingIssuesUsingTheJiraTracker {
         String status = tracker.getStatusFor(issueKey);
         assertThat(status, is("Open"));
 
-        tracker.updateStatus(issueKey, "Reopen Issue");
+        tracker.doTransition(issueKey, "Reopen Issue");
 
         String newStatus = tracker.getStatusFor(issueKey);
         assertThat(newStatus, is("Open"));
