@@ -2,7 +2,6 @@ package net.thucydides.plugins.jira.workflow
 
 import spock.lang.Specification
 import static net.thucydides.core.model.TestResult.*
-import com.sun.tools.javac.comp.Resolve
 import net.thucydides.plugins.jira.guice.Injectors
 
 class WhenUsingTheDefaultJiraWorkflow extends Specification {
