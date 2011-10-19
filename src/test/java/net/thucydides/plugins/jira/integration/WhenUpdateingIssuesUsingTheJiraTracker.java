@@ -6,6 +6,7 @@ import net.thucydides.core.model.TestStep;
 import net.thucydides.plugins.jira.JiraListener;
 import net.thucydides.plugins.jira.model.IssueComment;
 import net.thucydides.plugins.jira.model.IssueTracker;
+import net.thucydides.plugins.jira.model.IssueTrackerUpdateException;
 import net.thucydides.plugins.jira.service.JIRAConfiguration;
 import net.thucydides.plugins.jira.service.JiraIssueTracker;
 import org.junit.After;
@@ -13,6 +14,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.slf4j.Logger;
 
 import java.util.List;
 
@@ -32,30 +34,33 @@ public class WhenUpdateingIssuesUsingTheJiraTracker {
     private IssueHarness testIssueHarness;
 
     @Mock
-     JIRAConfiguration configuration;
+    JIRAConfiguration configuration;
 
-     @Before
-     public void prepareIssueTracker() throws Exception {
-         MockitoAnnotations.initMocks(this);
+    @Mock
+    Logger logger;
 
-         when(configuration.getJiraUser()).thenReturn("bruce");
-         when(configuration.getJiraPassword()).thenReturn("batm0bile");
-         when(configuration.getJiraWebserviceUrl()).thenReturn(JIRA_WEBSERVICE_URL);
+    @Before
+    public void prepareIssueTracker() throws Exception {
+        MockitoAnnotations.initMocks(this);
 
-         testIssueHarness = new IssueHarness(JIRA_WEBSERVICE_URL);
-         issueKey = testIssueHarness.createTestIssue();
+        when(configuration.getJiraUser()).thenReturn("bruce");
+        when(configuration.getJiraPassword()).thenReturn("batm0bile");
+        when(configuration.getJiraWebserviceUrl()).thenReturn(JIRA_WEBSERVICE_URL);
 
-         tracker = new JiraIssueTracker() {
-             @Override
-             protected JIRAConfiguration getConfiguration() {
-                 return configuration;
-             }
-         };
-     }
+        testIssueHarness = new IssueHarness(JIRA_WEBSERVICE_URL);
+        issueKey = testIssueHarness.createTestIssue();
+
+        tracker = new JiraIssueTracker(logger) {
+            @Override
+            protected JIRAConfiguration getConfiguration() {
+                return configuration;
+            }
+        };
+    }
 
 
     @After
-    public void  deleteTestIssue() throws Exception {
+    public void deleteTestIssue() throws Exception {
         testIssueHarness.deleteTestIssues();
     }
 
@@ -69,6 +74,7 @@ public class WhenUpdateingIssuesUsingTheJiraTracker {
         comments = tracker.getCommentsFor(issueKey);
         assertThat(comments.size(), is(1));
     }
+
 
     @Test
     public void should_be_able_to_update_a_comment_from_an_issue() throws Exception {
@@ -85,6 +91,13 @@ public class WhenUpdateingIssuesUsingTheJiraTracker {
 
         comments = tracker.getCommentsFor(issueKey);
         assertThat(comments.get(0).getText(), is("Integration test comment 4"));
+    }
+
+    @Test
+    public void should_not_be_able_to_update_a_comment_from_an_issue_that_does_not_exist() throws Exception {
+        tracker.addComment("#ISSUE-DOES-NOT-EXIST", "Integration test comment 1");
+
+        verify(logger).error("No JIRA issue found with key {}","#ISSUE-DOES-NOT-EXIST");
     }
 
     @Test
@@ -115,6 +128,13 @@ public class WhenUpdateingIssuesUsingTheJiraTracker {
 
         String newStatus = tracker.getStatusFor(issueKey);
         assertThat(newStatus, is("Open"));
+    }
+
+    @Test
+    public void should_not_be_able_to_update_the_status_for_an_issue_that_does_not_exist() throws Exception {
+        tracker.doTransition("#ISSUE-DOES-NOT-EXIST", "Resolve Issue");
+
+        verify(logger).error("No JIRA issue found with key {}","#ISSUE-DOES-NOT-EXIST");
     }
 
 }

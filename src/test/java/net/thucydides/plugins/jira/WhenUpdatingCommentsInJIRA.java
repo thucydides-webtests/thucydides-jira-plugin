@@ -12,12 +12,15 @@ import net.thucydides.core.steps.ExecutedStepDescription;
 import net.thucydides.core.steps.StepFailure;
 import net.thucydides.plugins.jira.model.IssueComment;
 import net.thucydides.plugins.jira.model.IssueTracker;
+import net.thucydides.plugins.jira.service.JiraIssueTracker;
+import net.thucydides.plugins.jira.service.NoSuchIssueException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.slf4j.Logger;
 
 import java.util.Arrays;
 import java.util.List;
@@ -182,6 +185,20 @@ public class WhenUpdatingCommentsInJIRA {
         verify(issueTracker).updateComment(any(IssueComment.class));
     }
 
+
+    @Test
+    public void should_not_update_status_if_issue_does_not_exist() {
+        System.setProperty("thucydides.public.url", "http://my.server/myproject/thucydides");
+        when(issueTracker.getStatusFor("MYPROJECT-123"))
+                         .thenThrow(new NoSuchIssueException("It ain't there no more."));
+
+        JiraListener listener = new JiraListener(issueTracker);
+        listener.testSuiteStarted(SampleTestSuite.class);
+        listener.testStarted("issue_123_should_be_fixed_now");
+        listener.testFinished(newTestOutcome("issue_123_should_be_fixed_now", TestResult.FAILURE));
+
+        verify(issueTracker, never()).doTransition(anyString(), anyString());
+    }
 
     @Test
     public void should_skip_JIRA_updates_if_requested() {
