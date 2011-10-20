@@ -59,7 +59,8 @@ You also need to provide the base URL for the published Thucydides report in the
     $ mvn test -Djira.url=http://issues.acme.com -Djira.username=scott -Djira.password=tiger \
                -Dthucydides.reports.url= http:://jenkins.acme.com/myproject/job/webtests/Thucydides_Report
 
-If you do not want Thucydides to update the JIRA issues for a particular run (e.g. for testing or debugging purposes), you can also set *thucydides.skip.jira.updates* to true, e.g.
+If you do not want Thucydides to update the JIRA issues for a particular run (e.g. for testing or debugging purposes),
+you can also set *thucydides.skip.jira.updates* to true, e.g.
 
     $mvn verify -Dthucydides.skip.jira.updates=true
 
