@@ -3,21 +3,25 @@ package net.thucydides.plugins.jira.workflow
 import com.google.inject.Inject
 import com.google.inject.name.Named
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.LoggerFactory
+import net.thucydides.core.util.EnvironmentVariables;
 
 class ClasspathWorkflowLoader implements WorkflowLoader {
 
-    private static final String BUNDLED_WORKFLOW = "default-workflow.groovy"
+    public static final String BUNDLED_WORKFLOW = "default-workflow.groovy"
     public static final String WORKFLOW_CONFIGURATION_PROPERTY = "thucydides.jira.workflow"
     public static final String ACTIVATE_WORKFLOW_PROPERTY = "thucydides.jira.workflow.active"
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClasspathWorkflowLoader.class);
 
     private final String defaultWorkflow;
+    private final EnvironmentVariables environmentVariables;
 
     @Inject
-    ClasspathWorkflowLoader(@Named("defaultWorkflow") String defaultWorkflow) {
+    ClasspathWorkflowLoader(@Named("defaultWorkflow") String defaultWorkflow,
+                            EnvironmentVariables environmentVariables) {
         this.defaultWorkflow = defaultWorkflow
+        this.environmentVariables = environmentVariables;
     }
 
     String getDefaultWorkflow() {
@@ -49,7 +53,7 @@ class ClasspathWorkflowLoader implements WorkflowLoader {
     }
 
     boolean worflowActivatedViaTheSystemProperty() {
-        Boolean.valueOf(System.getProperty(ACTIVATE_WORKFLOW_PROPERTY,"false"))
+        Boolean.valueOf(environmentVariables.getProperty(ACTIVATE_WORKFLOW_PROPERTY,"false"))
     }
 
     def getWorkflowFile() {
@@ -76,7 +80,7 @@ class ClasspathWorkflowLoader implements WorkflowLoader {
     }
 
     def getSystemConfiguredWorkflow() {
-        System.getProperty(WORKFLOW_CONFIGURATION_PROPERTY)
+        return environmentVariables.getProperty(WORKFLOW_CONFIGURATION_PROPERTY)
     }
 
     def systemConfiguredWorkflowFileExists() {

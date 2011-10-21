@@ -48,7 +48,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <thucydides.version>0.4.13</thucydides.version>
+        <thucydides.version>0.4.14-SNAPSHOT</thucydides.version>
         <surefire.version>2.9</surefire.version>
         <groovy.version>1.8.2</groovy.version>
     </properties>
@@ -120,6 +120,8 @@
                         </goals>
                         <configuration>
                             <skip>false</skip>
+                            <parallel>classes</parallel>
+                            <perCoreThreadCount>true</perCoreThreadCount>
                             <includes>
                                 <include>**/When*.java</include>
                                 <include>**/When*.groovy</include>
@@ -144,6 +146,8 @@
                         </goals>
                         <configuration>
                             <skip>false</skip>
+                            <parallel>classes</parallel>
+                            <perCoreThreadCount>true</perCoreThreadCount>
                             <excludes>
                                 <exclude>**/Abstract*.java</exclude>
                                 <exclude>**/samples/*.java</exclude>

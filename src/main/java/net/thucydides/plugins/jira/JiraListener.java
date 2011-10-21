@@ -1,29 +1,30 @@
 package net.thucydides.plugins.jira;
 
-import net.thucydides.core.ThucydidesSystemProperties;
 import net.thucydides.core.ThucydidesSystemProperty;
 import net.thucydides.core.model.ReportNamer.ReportType;
 import net.thucydides.core.model.Stories;
 import net.thucydides.core.model.Story;
 import net.thucydides.core.model.TestOutcome;
 import net.thucydides.core.model.TestResult;
-import net.thucydides.core.reports.html.Formatter;
 import net.thucydides.core.steps.ExecutedStepDescription;
 import net.thucydides.core.steps.StepFailure;
 import net.thucydides.core.steps.StepListener;
+import net.thucydides.core.util.EnvironmentVariables;
 import net.thucydides.plugins.jira.guice.Injectors;
 import net.thucydides.plugins.jira.model.IssueComment;
 import net.thucydides.plugins.jira.model.IssueTracker;
 import net.thucydides.plugins.jira.service.JIRAConfiguration;
+import net.thucydides.plugins.jira.service.NoSuchIssueException;
+import net.thucydides.plugins.jira.workflow.ClasspathWorkflowLoader;
 import net.thucydides.plugins.jira.workflow.Workflow;
 import net.thucydides.plugins.jira.workflow.WorkflowLoader;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static net.thucydides.core.annotations.TestAnnotations.forClass;
+import java.util.Set;
 
 /**
  * Updates JIRA issues referenced in a story with a link to the corresponding story report.
@@ -38,20 +39,36 @@ public class JiraListener implements StepListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(JiraListener.class);
     private final JIRAConfiguration configuration;
     private Workflow workflow;
+    WorkflowLoader loader;
 
-    public JiraListener(IssueTracker issueTracker) {
+    private final EnvironmentVariables environmentVariables;
+
+    public JiraListener(IssueTracker issueTracker,
+                        EnvironmentVariables environmentVariables,
+                        WorkflowLoader loader) {
         this.issueTracker = issueTracker;
+        this.environmentVariables = environmentVariables;
         configuration = Injectors.getInjector().getInstance(JIRAConfiguration.class);
-        WorkflowLoader loader = Injectors.getInjector().getInstance(WorkflowLoader.class);
+        this.loader = loader;
         workflow = loader.load();
     }
 
+    protected boolean shouldUpdateIssues() {
+        String jiraUrl = environmentVariables.getProperty(ThucydidesSystemProperty.JIRA_URL.getPropertyName());
+        String reportUrl = environmentVariables.getProperty(ThucydidesSystemProperty.PUBLIC_URL.getPropertyName());
+        return !(StringUtils.isEmpty(jiraUrl) || StringUtils.isEmpty(reportUrl));
+    }
+
     protected boolean shouldUpdateWorkflow() {
-        return (ThucydidesSystemProperties.getProperties().getValue(ThucydidesSystemProperty.PUBLIC_URL) != null);
+        Boolean workflowUpdatesEnabled
+                = Boolean.valueOf(environmentVariables.getProperty(ClasspathWorkflowLoader.ACTIVATE_WORKFLOW_PROPERTY));
+        return (workflowUpdatesEnabled);
     }
 
     public JiraListener() {
-        this(Injectors.getInjector().getInstance(IssueTracker.class));
+        this(Injectors.getInjector().getInstance(IssueTracker.class),
+             Injectors.getInjector().getInstance(EnvironmentVariables.class),
+             Injectors.getInjector().getInstance(WorkflowLoader.class));
     }
 
     protected IssueTracker getIssueTracker() {
@@ -77,31 +94,33 @@ public class JiraListener implements StepListener {
 
 
     public void testFinished(TestOutcome result) {
-
-        if (shouldUpdateWorkflow()) {
+        if (shouldUpdateIssues()) {
             List<String> issues = stripInitialHashesFrom(issueReferencesIn(result));
             updateIssues(issues, result.getResult());
         }
     }
 
-    private List<String> issueReferencesIn(TestOutcome result) {
-        if (currentTestCase != null) {
-            return forClass(currentTestCase).getIssuesForMethod(result.getMethodName());
-        } else {
-            return Formatter.issuesIn(result.getTitle());
-        }
-
+    private Set<String> issueReferencesIn(TestOutcome result) {
+        return result.getIssues();
     }
 
     private void updateIssues(List<String> issues, TestResult testResult) {
         for (String issueId : issues) {
             logIssueTracking(issueId);
             if (!dryRun()) {
-                addOrUpdateCommentFor(issueId);
-                if (getWorkflow().isActive()) {
-                    updateIssueStatusFor(issueId, testResult);
-                }
+                updateIssue(testResult, issueId);
             }
+        }
+    }
+
+    private void updateIssue(TestResult testResult, String issueId) {
+        try {
+            addOrUpdateCommentFor(issueId);
+            if (getWorkflow().isActive() && shouldUpdateWorkflow()) {
+                updateIssueStatusFor(issueId, testResult);
+            }
+        } catch (NoSuchIssueException e) {
+            LOGGER.error("No JIRA issue found with ID {}", issueId);
         }
     }
 
@@ -147,11 +166,11 @@ public class JiraListener implements StepListener {
     }
 
     private boolean dryRun() {
-        return Boolean.valueOf(System.getProperty("thucydides.skip.jira.updates"));
+        return Boolean.valueOf(environmentVariables.getProperty("thucydides.skip.jira.updates"));
     }
 
     private String linkToReport() {
-        String reportUrl = ThucydidesSystemProperties.getProperties().getValue(ThucydidesSystemProperty.PUBLIC_URL);
+        String reportUrl = environmentVariables.getProperty(ThucydidesSystemProperty.PUBLIC_URL.getPropertyName());
         String reportName = Stories.reportFor(storyUnderTest(), ReportType.HTML);
         return formatTestResultsLink(reportUrl, reportName);
     }
@@ -176,7 +195,7 @@ public class JiraListener implements StepListener {
         }
     }
 
-    private List<String> stripInitialHashesFrom(final List<String> issueNumbers) {
+    private List<String> stripInitialHashesFrom(final Set<String> issueNumbers) {
         List<String> issues = new ArrayList<String>();
         if (issueNumbers != null) {
             for (String issueNumber : issueNumbers) {

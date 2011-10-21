@@ -1,8 +1,12 @@
 package net.thucydides.plugins.jira.workflow;
 
 import net.thucydides.core.model.TestResult;
+import net.thucydides.core.util.EnvironmentVariables;
 import org.hamcrest.Matchers;
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import java.util.List;
 
@@ -13,10 +17,18 @@ import static org.hamcrest.Matchers.notNullValue;
 
 public class WhenConfiguringWorkflow {
 
+    @Mock
+    EnvironmentVariables environmentVariables;
+
+    @Before
+    public void initMocks() {
+        MockitoAnnotations.initMocks(this);
+    }
+
     @Test
     public void should_be_able_to_load_a_workflow_configuration() {
 
-        WorkflowLoader loader = new ClasspathWorkflowLoader("default-workflow.groovy");
+        WorkflowLoader loader = new ClasspathWorkflowLoader("default-workflow.groovy", environmentVariables);
 
         Workflow workflow = loader.load();
         assertThat(workflow, is(notNullValue()));

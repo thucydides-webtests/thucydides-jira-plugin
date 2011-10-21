@@ -6,12 +6,12 @@ import net.thucydides.core.annotations.Issues;
 import net.thucydides.core.annotations.Pending;
 import net.thucydides.core.annotations.Story;
 import net.thucydides.core.annotations.Title;
-import net.thucydides.core.junit.rules.SaveWebdriverSystemPropertiesRule;
 import net.thucydides.core.model.TestOutcome;
 import net.thucydides.core.model.TestResult;
 import net.thucydides.core.model.TestStep;
 import net.thucydides.core.steps.ExecutedStepDescription;
 import net.thucydides.core.steps.StepFailure;
+import net.thucydides.core.util.EnvironmentVariables;
 import net.thucydides.plugins.jira.JiraListener;
 import net.thucydides.plugins.jira.model.IssueComment;
 import net.thucydides.plugins.jira.model.IssueTracker;
@@ -59,22 +59,22 @@ public class WhenUpdatingIssueStatus {
         public void anotherTest() {}
     }
 
-    @Rule
-    public SaveWebdriverSystemPropertiesRule saveWebdriverSystemPropertiesRule = new SaveWebdriverSystemPropertiesRule();
-
     @Before
     public void initMocks() {
         MockitoAnnotations.initMocks(this);
-    }
-
-    @After
-    public void resetPluginSpecificProperties() {
-        System.clearProperty("thucydides.skip.jira.updates");
-        System.clearProperty("thucydides.jira.workflow.active");
+        when(environmentVariables.getProperty("jira.url")).thenReturn("http://my.jira.server");
+        when(environmentVariables.getProperty("thucydides.public.url")).thenReturn("http://my.server/myproject/thucydides");
+        
+        workflowLoader = new ClasspathWorkflowLoader(ClasspathWorkflowLoader.BUNDLED_WORKFLOW, environmentVariables);
     }
 
     @Mock
     IssueTracker issueTracker;
+
+    @Mock
+    EnvironmentVariables environmentVariables;
+    
+    ClasspathWorkflowLoader workflowLoader;
 
     @Test
     public void a_successful_test_should_not_update_status_if_workflow_is_not_activated() {
@@ -82,9 +82,29 @@ public class WhenUpdatingIssueStatus {
         TestOutcome result = newTestOutcome("issue_123_should_be_fixed_now", TestResult.SUCCESS);
 
         when(issueTracker.getStatusFor("MYPROJECT-123")).thenReturn("Open");
+        when(environmentVariables.getProperty("thucydides.jira.workflow.active")).thenReturn("false");
 
-        JiraListener listener = new JiraListener(issueTracker);
-        System.setProperty("thucydides.public.url", "http://my.server/myproject/thucydides");
+        workflowLoader = new ClasspathWorkflowLoader(ClasspathWorkflowLoader.BUNDLED_WORKFLOW, environmentVariables);
+        JiraListener listener = new JiraListener(issueTracker, environmentVariables, workflowLoader);
+
+        listener.testSuiteStarted(SampleTestCase.class);
+        listener.testStarted("issue_123_should_be_fixed_now");
+        listener.testFinished(result);
+
+        verify(issueTracker, never()).doTransition(eq("MYPROJECT-123"),anyString());
+    }
+
+    @Test
+    public void a_successful_test_should_not_update_status_if_workflow_update_status_is_not_specified() {
+
+        TestOutcome result = newTestOutcome("issue_123_should_be_fixed_now", TestResult.SUCCESS);
+
+        when(issueTracker.getStatusFor("MYPROJECT-123")).thenReturn("Open");
+        when(environmentVariables.getProperty("thucydides.jira.workflow.active")).thenReturn("");
+
+        workflowLoader = new ClasspathWorkflowLoader(ClasspathWorkflowLoader.BUNDLED_WORKFLOW, environmentVariables);
+        JiraListener listener = new JiraListener(issueTracker, environmentVariables, workflowLoader);
+
         listener.testSuiteStarted(SampleTestCase.class);
         listener.testStarted("issue_123_should_be_fixed_now");
         listener.testFinished(result);
@@ -95,13 +115,13 @@ public class WhenUpdatingIssueStatus {
     @Test
     public void a_successful_test_should_resolve_an_open_issue() {
 
-        System.setProperty("thucydides.jira.workflow.active","true");
+        when(environmentVariables.getProperty("thucydides.jira.workflow.active")).thenReturn("true");
+
         TestOutcome result = newTestOutcome("issue_123_should_be_fixed_now", TestResult.SUCCESS);
 
         when(issueTracker.getStatusFor("MYPROJECT-123")).thenReturn("Open");
 
-        JiraListener listener = new JiraListener(issueTracker);
-        System.setProperty("thucydides.public.url", "http://my.server/myproject/thucydides");
+        JiraListener listener = new JiraListener(issueTracker, environmentVariables, workflowLoader);
         listener.testSuiteStarted(SampleTestCase.class);
         listener.testStarted("issue_123_should_be_fixed_now");
         listener.testFinished(result);
@@ -112,13 +132,12 @@ public class WhenUpdatingIssueStatus {
 
     @Test
     public void a_successful_test_should_resolve_an_in_progress_issue() {
-        System.setProperty("thucydides.jira.workflow.active","true");
+        when(environmentVariables.getProperty("thucydides.jira.workflow.active")).thenReturn("true");
         TestOutcome result = newTestOutcome("issue_123_should_be_fixed_now", TestResult.SUCCESS);
 
         when(issueTracker.getStatusFor("MYPROJECT-123")).thenReturn("In Progress");
 
-        JiraListener listener = new JiraListener(issueTracker);
-        System.setProperty("thucydides.public.url", "http://my.server/myproject/thucydides");
+        JiraListener listener = new JiraListener(issueTracker, environmentVariables, workflowLoader);
         listener.testSuiteStarted(SampleTestCase.class);
         listener.testStarted("issue_123_should_be_fixed_now");
         listener.testFinished(result);
@@ -130,13 +149,12 @@ public class WhenUpdatingIssueStatus {
 
     @Test
     public void a_successful_test_should_resolve_a_reopened_issue() {
-        System.setProperty("thucydides.jira.workflow.active","true");
+        when(environmentVariables.getProperty("thucydides.jira.workflow.active")).thenReturn("true");
         TestOutcome result = newTestOutcome("issue_123_should_be_fixed_now", TestResult.SUCCESS);
 
         when(issueTracker.getStatusFor("MYPROJECT-123")).thenReturn("Reopened");
 
-        JiraListener listener = new JiraListener(issueTracker);
-        System.setProperty("thucydides.public.url", "http://my.server/myproject/thucydides");
+        JiraListener listener = new JiraListener(issueTracker, environmentVariables, workflowLoader);
         listener.testSuiteStarted(SampleTestCase.class);
         listener.testStarted("issue_123_should_be_fixed_now");
         listener.testFinished(result);
@@ -146,13 +164,12 @@ public class WhenUpdatingIssueStatus {
 
     @Test
     public void a_successful_test_should_not_affect_a_resolved_issue() {
-        System.setProperty("thucydides.jira.workflow.active","true");
+        when(environmentVariables.getProperty("thucydides.jira.workflow.active")).thenReturn("true");
         TestOutcome result = newTestOutcome("issue_123_should_be_fixed_now", TestResult.SUCCESS);
 
         when(issueTracker.getStatusFor("MYPROJECT-123")).thenReturn("Resolved");
 
-        JiraListener listener = new JiraListener(issueTracker);
-        System.setProperty("thucydides.public.url", "http://my.server/myproject/thucydides");
+        JiraListener listener = new JiraListener(issueTracker, environmentVariables, workflowLoader);
         listener.testSuiteStarted(SampleTestCase.class);
         listener.testStarted("issue_123_should_be_fixed_now");
         listener.testFinished(result);
@@ -162,13 +179,12 @@ public class WhenUpdatingIssueStatus {
 
     @Test
     public void a_failing_test_should_open_a_resolved_issue() {
-        System.setProperty("thucydides.jira.workflow.active","true");
+        when(environmentVariables.getProperty("thucydides.jira.workflow.active")).thenReturn("true");
         TestOutcome result = newTestOutcome("issue_123_should_be_fixed_now", TestResult.FAILURE);
 
         when(issueTracker.getStatusFor("MYPROJECT-123")).thenReturn("Resolved");
 
-        JiraListener listener = new JiraListener(issueTracker);
-        System.setProperty("thucydides.public.url", "http://my.server/myproject/thucydides");
+        JiraListener listener = new JiraListener(issueTracker, environmentVariables, workflowLoader);
         listener.testSuiteStarted(SampleTestCase.class);
         listener.testStarted("issue_123_should_be_fixed_now");
         listener.testFinished(result);
@@ -178,13 +194,12 @@ public class WhenUpdatingIssueStatus {
 
     @Test
     public void a_failing_test_should_open_a_closed_issue() {
-        System.setProperty("thucydides.jira.workflow.active","true");
+        when(environmentVariables.getProperty("thucydides.jira.workflow.active")).thenReturn("true");
         TestOutcome result = newTestOutcome("issue_123_should_be_fixed_now", TestResult.FAILURE);
 
         when(issueTracker.getStatusFor("MYPROJECT-123")).thenReturn("Closed");
 
-        JiraListener listener = new JiraListener(issueTracker);
-        System.setProperty("thucydides.public.url", "http://my.server/myproject/thucydides");
+        JiraListener listener = new JiraListener(issueTracker, environmentVariables, workflowLoader);
         listener.testSuiteStarted(SampleTestCase.class);
         listener.testStarted("issue_123_should_be_fixed_now");
         listener.testFinished(result);
@@ -194,13 +209,12 @@ public class WhenUpdatingIssueStatus {
 
     @Test
     public void a_failing_test_should_leave_an_open_issue_open() {
-        System.setProperty("thucydides.jira.workflow.active","true");
+        when(environmentVariables.getProperty("thucydides.jira.workflow.active")).thenReturn("true");
         TestOutcome result = newTestOutcome("issue_123_should_be_fixed_now", TestResult.FAILURE);
 
         when(issueTracker.getStatusFor("MYPROJECT-123")).thenReturn("Open");
 
-        JiraListener listener = new JiraListener(issueTracker);
-        System.setProperty("thucydides.public.url", "http://my.server/myproject/thucydides");
+        JiraListener listener = new JiraListener(issueTracker, environmentVariables, workflowLoader);
         listener.testSuiteStarted(SampleTestCase.class);
         listener.testStarted("issue_123_should_be_fixed_now");
         listener.testFinished(result);
@@ -210,13 +224,12 @@ public class WhenUpdatingIssueStatus {
 
     @Test
     public void a_failing_test_should_leave_a_reopened_issue_reopened() {
-        System.setProperty("thucydides.jira.workflow.active","true");
+        when(environmentVariables.getProperty("thucydides.jira.workflow.active")).thenReturn("true");
         TestOutcome result = newTestOutcome("issue_123_should_be_fixed_now", TestResult.FAILURE);
 
         when(issueTracker.getStatusFor("MYPROJECT-123")).thenReturn("Reopen");
 
-        JiraListener listener = new JiraListener(issueTracker);
-        System.setProperty("thucydides.public.url", "http://my.server/myproject/thucydides");
+        JiraListener listener = new JiraListener(issueTracker, environmentVariables, workflowLoader);
         listener.testSuiteStarted(SampleTestCase.class);
         listener.testStarted("issue_123_should_be_fixed_now");
         listener.testFinished(result);
@@ -226,13 +239,12 @@ public class WhenUpdatingIssueStatus {
 
     @Test
     public void a_failing_test_should_leave_in_progress_issue_in_progress() {
-        System.setProperty("thucydides.jira.workflow.active","true");
+        when(environmentVariables.getProperty("thucydides.jira.workflow.active")).thenReturn("true");
         TestOutcome result = newTestOutcome("issue_123_should_be_fixed_now", TestResult.FAILURE);
 
         when(issueTracker.getStatusFor("MYPROJECT-123")).thenReturn("In Progress");
 
-        JiraListener listener = new JiraListener(issueTracker);
-        System.setProperty("thucydides.public.url", "http://my.server/myproject/thucydides");
+        JiraListener listener = new JiraListener(issueTracker, environmentVariables, workflowLoader);
         listener.testSuiteStarted(SampleTestCase.class);
         listener.testStarted("issue_123_should_be_fixed_now");
         listener.testFinished(result);
