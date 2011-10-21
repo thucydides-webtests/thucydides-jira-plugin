@@ -54,8 +54,14 @@ public class JiraListener implements StepListener {
     }
 
     protected boolean shouldUpdateIssues() {
+
         String jiraUrl = environmentVariables.getProperty(ThucydidesSystemProperty.JIRA_URL.getPropertyName());
         String reportUrl = environmentVariables.getProperty(ThucydidesSystemProperty.PUBLIC_URL.getPropertyName());
+        LOGGER.info("JIRA LISTENER STATUS");
+        LOGGER.info("JIRA URL = {} ", jiraUrl);
+        LOGGER.info("REPORT URL = {} ", reportUrl);
+        LOGGER.info("WORKFLOW ACTIVE = {} ", workflow.isActive());
+
         return !(StringUtils.isEmpty(jiraUrl) || StringUtils.isEmpty(reportUrl));
     }
 
@@ -125,10 +131,12 @@ public class JiraListener implements StepListener {
     }
 
     private void updateIssueStatusFor(final String issueId, final TestResult testResult) {
+        LOGGER.info("Updating status for issue {} with test result {}", issueId, testResult);
+
         String currentStatus = issueTracker.getStatusFor(issueId);
 
-         List<String> transitions
-                            = getWorkflow().getTransitions().forTestResult(testResult).whenIssueIs(currentStatus);
+        List<String> transitions = getWorkflow().getTransitions().forTestResult(testResult).whenIssueIs(currentStatus);
+        LOGGER.info("Found transitions: {}", transitions);
 
         for(String transition : transitions) {
             issueTracker.doTransition(issueId, transition);
@@ -136,6 +144,8 @@ public class JiraListener implements StepListener {
     }
 
     private void addOrUpdateCommentFor(final String issueId) {
+        LOGGER.info("Updating comments for issue {}", issueId);
+
         List<IssueComment> comments = issueTracker.getCommentsFor(issueId);
         IssueComment existingComment = findExistingCommentIn(comments);
         if (existingComment != null) {
