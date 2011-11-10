@@ -61,6 +61,9 @@ public class JiraListener implements StepListener {
         LOGGER.info("JIRA URL = {} ", jiraUrl);
         LOGGER.info("REPORT URL = {} ", reportUrl);
         LOGGER.info("WORKFLOW ACTIVE = {} ", workflow.isActive());
+        if (workflow.isActive()) {
+            LOGGER.info("WORKFLOW TRANSITIONS = {}", workflow.getTransitions());
+        }
 
         return !(StringUtils.isEmpty(jiraUrl) || StringUtils.isEmpty(reportUrl));
     }
@@ -121,7 +124,7 @@ public class JiraListener implements StepListener {
 
     private void updateIssue(TestResult testResult, String issueId) {
         try {
-            addOrUpdateCommentFor(issueId);
+            addOrUpdateCommentFor(issueId, testResult);
             if (getWorkflow().isActive() && shouldUpdateWorkflow()) {
                 updateIssueStatusFor(issueId, testResult);
             }
@@ -132,8 +135,9 @@ public class JiraListener implements StepListener {
 
     private void updateIssueStatusFor(final String issueId, final TestResult testResult) {
         LOGGER.info("Updating status for issue {} with test result {}", issueId, testResult);
-
         String currentStatus = issueTracker.getStatusFor(issueId);
+
+        LOGGER.info("Issue {} currently has status '{}'", issueId, currentStatus);
 
         List<String> transitions = getWorkflow().getTransitions().forTestResult(testResult).whenIssueIs(currentStatus);
         LOGGER.info("Found transitions: {}", transitions);
@@ -143,19 +147,24 @@ public class JiraListener implements StepListener {
         }
     }
 
-    private void addOrUpdateCommentFor(final String issueId) {
+    private void addOrUpdateCommentFor(final String issueId, TestResult testResult) {
         LOGGER.info("Updating comments for issue {}", issueId);
 
         List<IssueComment> comments = issueTracker.getCommentsFor(issueId);
         IssueComment existingComment = findExistingCommentIn(comments);
         if (existingComment != null) {
-            IssueComment updatedComment = new IssueComment(existingComment.getId(), linkToReport(),
+            String newComment = testResultComment(testResult, linkToReport());
+            IssueComment updatedComment = new IssueComment(existingComment.getId(), newComment,
                                                            existingComment.getAuthor());
             issueTracker.updateComment(updatedComment);
         } else {
             issueTracker.addComment(issueId, linkToReport());
         }
 
+    }
+
+    private String testResultComment(TestResult testResult, String linkToReport) {
+        return "Automated test run with result " + testResult + " (see " + linkToReport + ") for full report.";
     }
 
     private IssueComment findExistingCommentIn(List<IssueComment> comments) {

@@ -16,8 +16,10 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.slf4j.Logger;
 
+import java.util.Date;
 import java.util.List;
 
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.verify;
@@ -30,6 +32,8 @@ public class WhenUpdateingIssuesUsingTheJiraTracker {
     private static final String JIRA_WEBSERVICE_URL = "http://ec2-122-248-221-171.ap-southeast-1.compute.amazonaws.com:8081/rpc/soap/jirasoapservice-v2";
 
     private String issueKey;
+
+    private final String CLOSED_ISSUE = "THUCINT-743";
 
     private IssueHarness testIssueHarness;
 
@@ -77,6 +81,20 @@ public class WhenUpdateingIssuesUsingTheJiraTracker {
 
 
     @Test
+    public void should_be_able_to_add_a_comment_to_a_closed_issue() throws Exception {
+        List<IssueComment> comments = tracker.getCommentsFor(CLOSED_ISSUE);
+
+        String comment = "Comment on closed test: " + new Date();
+
+        tracker.addComment(CLOSED_ISSUE, comment);
+
+        comments = tracker.getCommentsFor(CLOSED_ISSUE);
+        assertThat(comments.size(), greaterThan(0));
+        assertThat(comments.get(comments.size() - 1).getText(), is(comment));
+    }
+
+
+    @Test
     public void should_be_able_to_update_a_comment_from_an_issue() throws Exception {
         tracker.addComment(issueKey, "Integration test comment 1");
         tracker.addComment(issueKey, "Integration test comment 2");
@@ -106,6 +124,13 @@ public class WhenUpdateingIssuesUsingTheJiraTracker {
         String status = tracker.getStatusFor(issueKey);
 
         assertThat(status, is("Open"));
+    }
+
+    @Test
+    public void should_not_be_able_to_update_the_status_of_a_closed_issue() throws Exception {
+        tracker.doTransition(CLOSED_ISSUE, "Resolve Issue");
+        String newStatus = tracker.getStatusFor(CLOSED_ISSUE);
+        assertThat(newStatus, is("Closed"));
     }
 
     @Test
