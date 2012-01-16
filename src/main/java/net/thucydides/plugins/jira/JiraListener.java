@@ -1,5 +1,6 @@
 package net.thucydides.plugins.jira;
 
+import ch.lambdaj.function.convert.Converter;
 import net.thucydides.core.ThucydidesSystemProperty;
 import net.thucydides.core.model.ReportNamer.ReportType;
 import net.thucydides.core.model.Stories;
@@ -26,6 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import static ch.lambdaj.Lambda.convert;
+
 /**
  * Updates JIRA issues referenced in a story with a link to the corresponding story report.
  */
@@ -42,12 +45,14 @@ public class JiraListener implements StepListener {
     WorkflowLoader loader;
 
     private final EnvironmentVariables environmentVariables;
+    private final String projectPrefix;
 
     public JiraListener(IssueTracker issueTracker,
                         EnvironmentVariables environmentVariables,
                         WorkflowLoader loader) {
         this.issueTracker = issueTracker;
         this.environmentVariables = environmentVariables;
+        this.projectPrefix = environmentVariables.getProperty(ThucydidesSystemProperty.JIRA_PROJECT.getPropertyName());
         configuration = Injectors.getInjector().getInstance(JIRAConfiguration.class);
         this.loader = loader;
         workflow = loader.load();
@@ -104,7 +109,7 @@ public class JiraListener implements StepListener {
 
     public void testFinished(TestOutcome result) {
         if (shouldUpdateIssues()) {
-            List<String> issues = stripInitialHashesFrom(issueReferencesIn(result));
+            List<String> issues = addPrefixesIfRequired(stripInitialHashesFrom(issueReferencesIn(result)));
             updateIssues(issues, result.getResult());
         }
     }
@@ -214,22 +219,47 @@ public class JiraListener implements StepListener {
         }
     }
 
-    private List<String> stripInitialHashesFrom(final Set<String> issueNumbers) {
-        List<String> issues = new ArrayList<String>();
-        if (issueNumbers != null) {
-            for (String issueNumber : issueNumbers) {
-                if (issueNumber.startsWith("#")) {
-                    issues.add(issueNumber.substring(1));
-                } else {
-                    issues.add(issueNumber);
+    private List<String> addPrefixesIfRequired(final List<String> issueNumbers) {
+        return convert(issueNumbers, toIssueNumbersWithPrefixes());
+    }
+
+    private Converter<String, String> toIssueNumbersWithPrefixes() {
+        return new Converter<String, String>() {
+            public String convert(String issueNumber) {
+                if (StringUtils.isEmpty(projectPrefix)) {
+                    return issueNumber;
                 }
+                if (issueNumber.startsWith(projectPrefix)) {
+                    return issueNumber;
+                }
+                return projectPrefix + "-" + issueNumber;
             }
-        }
-        return issues;
+        };
+    }
+
+    private List<String> stripInitialHashesFrom(final Set<String> issueNumbers) {
+        return convert(issueNumbers, toIssueNumbersWithoutHashes());
+    }
+
+    private Converter<String, String> toIssueNumbersWithoutHashes() {
+        return new Converter<String, String>() {
+            public String convert(String issueNumber) {
+
+                if (issueNumber.startsWith("#")) {
+                    return issueNumber.substring(1);
+                } else {
+                    return issueNumber;
+                }
+
+            }
+        };
     }
 
     public void stepStarted(ExecutedStepDescription executedStepDescription) {
 
+    }
+
+    public void skippedStepStarted(ExecutedStepDescription description) {
     }
 
     public void stepFailed(StepFailure stepFailure) {
@@ -254,5 +284,8 @@ public class JiraListener implements StepListener {
 
     public void testIgnored() {
 
+    }
+
+    public void notifyScreenChange() {
     }
 }

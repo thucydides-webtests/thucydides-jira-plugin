@@ -11,6 +11,7 @@ import net.thucydides.core.model.TestStep;
 import net.thucydides.core.steps.ExecutedStepDescription;
 import net.thucydides.core.steps.StepFailure;
 import net.thucydides.core.util.EnvironmentVariables;
+import net.thucydides.core.util.MockEnvironmentVariables;
 import net.thucydides.plugins.jira.model.IssueComment;
 import net.thucydides.plugins.jira.model.IssueTracker;
 import net.thucydides.plugins.jira.service.NoSuchIssueException;
@@ -31,6 +32,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.contains;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,6 +52,18 @@ public class WhenUpdatingCommentsInJIRA {
         public void issue_123_should_be_fixed_now() {}
 
         @Title("Fixes issues #MYPROJECT-123,#MYPROJECT-456")
+        public void issue_123_and_456_should_be_fixed_now() {}
+
+        public void anotherTest() {}
+    }
+
+    @Story(SampleFeature.SampleStory.class)
+    private static final class SampleTestSuiteWithoutPrefixes {
+
+        @Title("Test for issue #123")
+        public void issue_123_should_be_fixed_now() {}
+
+        @Title("Fixes issues #123,#456")
         public void issue_123_and_456_should_be_fixed_now() {}
 
         public void anotherTest() {}
@@ -105,6 +119,40 @@ public class WhenUpdatingCommentsInJIRA {
         listener.testFinished(newTestOutcome("issue_123_should_be_fixed_now", TestResult.SUCCESS));
 
         verify(issueTracker).addComment(eq("MYPROJECT-123"), anyString());
+    }
+
+    @Test
+    public void should_not_add_the_project_prefix_to_the_issue_number_if_already_present() {
+        MockEnvironmentVariables mockEnvironmentVariables = prepareMockEnvironment();
+
+        JiraListener listener = new JiraListener(issueTracker, mockEnvironmentVariables, workflowLoader);
+
+        listener.testSuiteStarted(SampleTestSuite.class);
+        listener.testStarted("issue_123_should_be_fixed_now");
+        listener.testFinished(newTestOutcome("issue_123_should_be_fixed_now", TestResult.SUCCESS));
+
+        verify(issueTracker).addComment(eq("MYPROJECT-123"), anyString());
+    }
+
+    @Test
+    public void should_add_the_project_prefix_to_the_issue_number_if_not_already_present() {
+        MockEnvironmentVariables mockEnvironmentVariables = prepareMockEnvironment();
+
+        JiraListener listener = new JiraListener(issueTracker, mockEnvironmentVariables, workflowLoader);
+
+        listener.testSuiteStarted(SampleTestSuiteWithoutPrefixes.class);
+        listener.testStarted("issue_123_should_be_fixed_now");
+        listener.testFinished(newTestOutcome("issue_123_should_be_fixed_now", TestResult.SUCCESS));
+
+        verify(issueTracker).addComment(eq("MYPROJECT-123"), anyString());
+    }
+
+    private MockEnvironmentVariables prepareMockEnvironment() {
+        MockEnvironmentVariables mockEnvironmentVariables = new MockEnvironmentVariables();
+        mockEnvironmentVariables.setProperty("jira.project","MYPROJECT");
+        mockEnvironmentVariables.setProperty("jira.url","http://my.jira.server");
+        mockEnvironmentVariables.setProperty("thucydides.public.url","http://my.server/myproject/thucydides");
+        return mockEnvironmentVariables;
     }
 
     @Test
