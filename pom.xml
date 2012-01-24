@@ -2,15 +2,22 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.sonatype.oss</groupId>
-        <artifactId>oss-parent</artifactId>
-        <version>6</version>
+        <artifactId>thucydides</artifactId>
+        <groupId>net.thucydides</groupId>
+        <version>0.6.5</version>
     </parent>
     <groupId>net.thucydides.plugins.jira</groupId>
     <artifactId>thucydides-jira-plugin</artifactId>
-    <version>0.6.3-SNAPSHOT</version>
+    <version>0.6.7-SNAPSHOT</version>
     <name>thucydides-jira-plugin</name>
     <url>http://www.github.com/thucydides-webtests/thucydides-jira-plugin</url>
+
+    <scm>
+        <connection>scm:git:git@github.com:thucydides-webtests/thucydides-jira-plugin.git</connection>
+        <developerConnection>scm:git:git@github.com:thucydides-webtests/thucydides-jira-plugin.git</developerConnection>
+        <url>scm:git:git@github.com:thucydides-webtests/thucydides.git</url>
+    </scm>
+
 
     <description>Thucydides JIRA Integration</description>
     <licenses>
@@ -33,11 +40,6 @@
         <url>http://www.wakaleo-labs.com/jenkins/view/thucydides</url>
     </ciManagement>
     <inceptionYear>2011</inceptionYear>
-    <scm>
-        <connection>scm:git:git@github.com:thucydides-webtests/thucydides-jira-plugin.git</connection>
-        <developerConnection>scm:git:git@github.com:thucydides-webtests/thucydides-jira-plugin.git</developerConnection>
-        <url>scm:git:git@github.com:thucydides-webtests/thucydides-jira-plugin.git</url>
-    </scm>
     <developers>
         <developer>
             <id>johnsmart</id>
@@ -48,7 +50,6 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <thucydides.version>0.6.3</thucydides.version>
         <surefire.version>2.10</surefire.version>
         <groovy.version>1.8.5</groovy.version>
     </properties>
@@ -198,7 +199,7 @@
         <dependency>
             <groupId>net.thucydides</groupId>
             <artifactId>thucydides-core</artifactId>
-            <version>${thucydides.version}</version>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
@@ -246,8 +247,8 @@
 
         <dependency>
             <groupId>junit</groupId>
-            <artifactId>junit-dep</artifactId>
-            <version>4.10</version>
+            <artifactId>junit</artifactId>
+            <version>4.8.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>

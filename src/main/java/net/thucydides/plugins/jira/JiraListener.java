@@ -14,6 +14,7 @@ import net.thucydides.core.util.EnvironmentVariables;
 import net.thucydides.plugins.jira.guice.Injectors;
 import net.thucydides.plugins.jira.model.IssueComment;
 import net.thucydides.plugins.jira.model.IssueTracker;
+import net.thucydides.plugins.jira.model.TestResultComment;
 import net.thucydides.plugins.jira.service.JIRAConfiguration;
 import net.thucydides.plugins.jira.service.NoSuchIssueException;
 import net.thucydides.plugins.jira.workflow.ClasspathWorkflowLoader;
@@ -23,7 +24,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -34,6 +34,7 @@ import static ch.lambdaj.Lambda.convert;
  */
 public class JiraListener implements StepListener {
 
+    private static final String BUILD_ID_PROPERTY = "build.id";
     private final IssueTracker issueTracker;
 
     private Class<?> currentTestCase;
@@ -47,6 +48,8 @@ public class JiraListener implements StepListener {
     private final EnvironmentVariables environmentVariables;
     private final String projectPrefix;
 
+    private final TestResultTally resultTally;
+
     public JiraListener(IssueTracker issueTracker,
                         EnvironmentVariables environmentVariables,
                         WorkflowLoader loader) {
@@ -55,6 +58,7 @@ public class JiraListener implements StepListener {
         this.projectPrefix = environmentVariables.getProperty(ThucydidesSystemProperty.JIRA_PROJECT.getPropertyName());
         configuration = Injectors.getInjector().getInstance(JIRAConfiguration.class);
         this.loader = loader;
+        this.resultTally = new TestResultTally();
         workflow = loader.load();
     }
 
@@ -81,8 +85,8 @@ public class JiraListener implements StepListener {
 
     public JiraListener() {
         this(Injectors.getInjector().getInstance(IssueTracker.class),
-             Injectors.getInjector().getInstance(EnvironmentVariables.class),
-             Injectors.getInjector().getInstance(WorkflowLoader.class));
+                Injectors.getInjector().getInstance(EnvironmentVariables.class),
+                Injectors.getInjector().getInstance(WorkflowLoader.class));
     }
 
     protected IssueTracker getIssueTracker() {
@@ -110,7 +114,29 @@ public class JiraListener implements StepListener {
     public void testFinished(TestOutcome result) {
         if (shouldUpdateIssues()) {
             List<String> issues = addPrefixesIfRequired(stripInitialHashesFrom(issueReferencesIn(result)));
-            updateIssues(issues, result.getResult());
+            tallyResults(result, issues);
+        }
+    }
+
+    private void tallyResults(TestOutcome result, List<String> issues) {
+        for(String issue : issues) {
+            resultTally.recordResult(issue, result);
+        }
+    }
+
+    public void testSuiteFinished() {
+        if (shouldUpdateIssues()) {
+            Set<String> issues = resultTally.getIssues();
+            updateIssueStatus(issues);
+        }
+    }
+
+    private void updateIssueStatus(Set<String> issues) {
+        for(String issue : issues) {
+            logIssueTracking(issue);
+            if (!dryRun()) {
+                updateIssue(issue, resultTally.getTestOutcomesForIssue(issue));
+            }
         }
     }
 
@@ -118,20 +144,12 @@ public class JiraListener implements StepListener {
         return result.getIssues();
     }
 
-    private void updateIssues(List<String> issues, TestResult testResult) {
-        for (String issueId : issues) {
-            logIssueTracking(issueId);
-            if (!dryRun()) {
-                updateIssue(testResult, issueId);
-            }
-        }
-    }
+    private void updateIssue(String issueId, List<TestOutcome> testOutcomes) {
 
-    private void updateIssue(TestResult testResult, String issueId) {
         try {
-            addOrUpdateCommentFor(issueId, testResult);
+            TestResultComment testResultComment = newOrUpdatedCommentFor(issueId, testOutcomes);
             if (getWorkflow().isActive() && shouldUpdateWorkflow()) {
-                updateIssueStatusFor(issueId, testResult);
+                updateIssueStatusFor(issueId, testResultComment.getOverallResult());
             }
         } catch (NoSuchIssueException e) {
             LOGGER.error("No JIRA issue found with ID {}", issueId);
@@ -145,34 +163,44 @@ public class JiraListener implements StepListener {
         LOGGER.info("Issue {} currently has status '{}'", issueId, currentStatus);
 
         List<String> transitions = getWorkflow().getTransitions().forTestResult(testResult).whenIssueIs(currentStatus);
-        LOGGER.info("Found transitions: {}", transitions);
+        LOGGER.info("Found transitions {} for issue {}", transitions, issueId);
 
         for(String transition : transitions) {
             issueTracker.doTransition(issueId, transition);
         }
     }
 
-    private void addOrUpdateCommentFor(final String issueId, TestResult testResult) {
+    private TestResultComment newOrUpdatedCommentFor(final String issueId, List<TestOutcome> testOutcomes) {
         LOGGER.info("Updating comments for issue {}", issueId);
 
         List<IssueComment> comments = issueTracker.getCommentsFor(issueId);
-        IssueComment existingComment = findExistingCommentIn(comments);
-        if (existingComment != null) {
-            String newComment = testResultComment(testResult, linkToReport());
-            IssueComment updatedComment = new IssueComment(existingComment.getId(), newComment,
+        IssueComment existingComment = findExistingThucydidesCommentIn(comments);
+        String testRunNumber = environmentVariables.getProperty(BUILD_ID_PROPERTY);
+        TestResultComment testResultComment;
+
+        if (existingComment == null) {
+            testResultComment = TestResultComment.comment()
+                                                  .withResults(testOutcomes)
+                                                  .withReportUrl(linkToReport())
+                                                  .withTestRun(testRunNumber).asComment();
+
+            issueTracker.addComment(issueId, testResultComment.asText());
+        } else {
+            testResultComment = TestResultComment.fromText(existingComment.getText())
+                                                         .withUpdatedTestResults(testOutcomes)
+                                                         .withUpdatedReportUrl(linkToReport())
+                                                         .withUpdatedTestRunNumber(testRunNumber);
+
+            IssueComment updatedComment = new IssueComment(existingComment.getId(),
+                                                           testResultComment.asText(),
                                                            existingComment.getAuthor());
             issueTracker.updateComment(updatedComment);
-        } else {
-            issueTracker.addComment(issueId, linkToReport());
+            
         }
-
+        return testResultComment;
     }
 
-    private String testResultComment(TestResult testResult, String linkToReport) {
-        return "Automated test run with result " + testResult + " (see " + linkToReport + ") for full report.";
-    }
-
-    private IssueComment findExistingCommentIn(List<IssueComment> comments) {
+    private IssueComment findExistingThucydidesCommentIn(List<IssueComment> comments) {
         for (IssueComment comment : comments) {
             if (comment.getText().contains("Thucydides Test Results")) {
                 return comment;
