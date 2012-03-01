@@ -2,7 +2,7 @@ package net.thucydides.plugins.jira;
 
 import ch.lambdaj.function.convert.Converter;
 import net.thucydides.core.ThucydidesSystemProperty;
-import net.thucydides.core.model.ReportNamer.ReportType;
+import net.thucydides.core.model.ReportType;
 import net.thucydides.core.model.Stories;
 import net.thucydides.core.model.Story;
 import net.thucydides.core.model.TestOutcome;
@@ -294,12 +294,21 @@ public class JiraListener implements StepListener {
 
     }
 
+    public void lastStepFailed(StepFailure stepFailure) {
+    }
+
     public void stepIgnored() {
 
     }
 
+    public void stepIgnored(String s) {
+    }
+
     public void stepPending() {
 
+    }
+
+    public void stepPending(String s) {
     }
 
     public void stepFinished() {
