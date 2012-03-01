@@ -146,7 +146,7 @@
                             <goal>test</goal>
                         </goals>
                         <configuration>
-                            <skip>false</skip>
+                            <skip>true</skip>
                             <parallel>classes</parallel>
                             <perCoreThreadCount>true</perCoreThreadCount>
                             <excludes>
