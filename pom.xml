@@ -18,10 +18,6 @@
         <url>scm:git:git@github.com:thucydides-webtests/thucydides.git</url>
     </scm>
 
-    <properties>
-        <thucydides.version>0.7.10</thucydides.version>
-    </properties>
-
     <description>Thucydides JIRA Integration</description>
     <licenses>
         <license>
@@ -55,7 +51,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <surefire.version>2.10</surefire.version>
         <groovy.version>1.8.5</groovy.version>
-    </properties>
+        <thucydides.version>0.7.10</thucydides.version>
+</properties>
 
     <build>
         <plugins>
