@@ -4,11 +4,11 @@
     <parent>
         <artifactId>thucydides</artifactId>
         <groupId>net.thucydides</groupId>
-        <version>0.7.10</version>
+        <version>0.8.12</version>
     </parent>
     <groupId>net.thucydides.plugins.jira</groupId>
     <artifactId>thucydides-jira-plugin</artifactId>
-    <version>0.7.11-SNAPSHOT</version>
+    <version>0.8.12-SNAPSHOT</version>
     <name>thucydides-jira-plugin</name>
     <url>http://www.github.com/thucydides-webtests/thucydides-jira-plugin</url>
 
@@ -51,7 +51,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <surefire.version>2.10</surefire.version>
         <groovy.version>1.8.5</groovy.version>
-        <thucydides.version>0.7.10</thucydides.version>
+        <thucydides.version>0.8.10</thucydides.version>
 </properties>
 
     <build>
@@ -255,7 +255,6 @@
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
             <version>1.1</version>
-            <scope>test</scope>
           </dependency>
         <dependency>
             <groupId>org.spockframework</groupId>

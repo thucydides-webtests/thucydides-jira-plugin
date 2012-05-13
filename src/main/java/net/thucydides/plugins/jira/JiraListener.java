@@ -60,18 +60,26 @@ public class JiraListener implements StepListener {
         this.loader = loader;
         this.resultTally = new TestResultTally();
         workflow = loader.load();
+
+        logStatus(environmentVariables);
+
+    }
+
+    private void logStatus(EnvironmentVariables environmentVariables) {
+        String jiraUrl = environmentVariables.getProperty(ThucydidesSystemProperty.JIRA_URL.getPropertyName());
+        String reportUrl = environmentVariables.getProperty(ThucydidesSystemProperty.PUBLIC_URL.getPropertyName());
+        LOGGER.debug("JIRA LISTENER STATUS");
+        LOGGER.debug("JIRA URL: {} ", jiraUrl);
+        LOGGER.debug("REPORT URL: {} ", reportUrl);
+        LOGGER.debug("WORKFLOW ACTIVE: {} ", workflow.isActive());
     }
 
     protected boolean shouldUpdateIssues() {
 
         String jiraUrl = environmentVariables.getProperty(ThucydidesSystemProperty.JIRA_URL.getPropertyName());
         String reportUrl = environmentVariables.getProperty(ThucydidesSystemProperty.PUBLIC_URL.getPropertyName());
-        LOGGER.info("JIRA LISTENER STATUS");
-        LOGGER.info("JIRA URL = {} ", jiraUrl);
-        LOGGER.info("REPORT URL = {} ", reportUrl);
-        LOGGER.info("WORKFLOW ACTIVE = {} ", workflow.isActive());
         if (workflow.isActive()) {
-            LOGGER.info("WORKFLOW TRANSITIONS = {}", workflow.getTransitions());
+            LOGGER.debug("WORKFLOW TRANSITIONS: {}", workflow.getTransitions());
         }
 
         return !(StringUtils.isEmpty(jiraUrl) || StringUtils.isEmpty(reportUrl));
@@ -315,9 +323,9 @@ public class JiraListener implements StepListener {
 
     }
 
-    public void testFailed(Throwable throwable) {
-
+    public void testFailed(TestOutcome testOutcome, Throwable cause) {
     }
+
 
     public void testIgnored() {
 

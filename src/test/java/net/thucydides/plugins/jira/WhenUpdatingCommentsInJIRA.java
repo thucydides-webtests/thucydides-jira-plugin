@@ -205,6 +205,9 @@ public class WhenUpdatingCommentsInJIRA {
     @Mock
     StepFailure failure;
 
+    @Mock
+    TestOutcome testOutcome;
+
     @Test
     public void should_add_one_comment_even_when_several_steps_are_called() {
         JiraListener listener = new JiraListener(issueTracker, environmentVariables, workflowLoader);
@@ -224,7 +227,7 @@ public class WhenUpdatingCommentsInJIRA {
         listener.stepStarted(stepDescription);
         listener.stepPending();
 
-        listener.testFailed(new AssertionError("Oops!"));
+        listener.testFailed(testOutcome, new AssertionError("Oops!"));
 
         listener.testFinished(newTestOutcome("issue_123_and_456_should_be_fixed_now", TestResult.FAILURE));
 
