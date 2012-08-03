@@ -2,7 +2,7 @@ package net.thucydides.plugins.jira.service;
 
 
 import ch.lambdaj.function.convert.Converter;
-import net.thucydides.plugins.jira.client.SOAPSession;
+import com.google.inject.Inject;
 import net.thucydides.plugins.jira.guice.Injectors;
 import net.thucydides.plugins.jira.model.IssueComment;
 import net.thucydides.plugins.jira.model.IssueTracker;
@@ -17,10 +17,6 @@ import thucydides.plugins.jira.soap.RemoteNamedObject;
 import thucydides.plugins.jira.soap.RemoteStatus;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.rmi.RemoteException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -36,55 +32,24 @@ import static ch.lambdaj.Lambda.convert;
  */
 public class JiraIssueTracker implements IssueTracker {
 
-    private final JIRAConfiguration configuration;
     private final Logger logger;
+    private final JIRAConnection jiraConnection;
+    private final Marker warn = MarkerFactory.getMarker("WARN");
 
-    private SOAPSession soapSession;
+    @Inject
+    public JiraIssueTracker(JIRAConfiguration jiraConfiguration) {
+        this(LoggerFactory.getLogger(JiraIssueTracker.class), jiraConfiguration);
+    }
 
-    Marker warn = MarkerFactory.getMarker("WARN");
-
-
-    public JiraIssueTracker(Logger logger) {
+    public JiraIssueTracker(Logger logger, JIRAConfiguration jiraConfiguration) {
         this.logger = logger;
-        this.configuration = Injectors.getInjector().getInstance(JIRAConfiguration.class);
-    }
-
-    public JiraIssueTracker() {
-        this(LoggerFactory.getLogger(JiraIssueTracker.class));
-    }
-
-    protected JIRAConfiguration getConfiguration() {
-        return configuration;
-    }
-
-    public boolean isWikiRenderedActive() {
-        return getConfiguration().isWikiRenderedActive();
-    }
-
-    private SOAPSession getSoapSession() throws MalformedURLException, RemoteException {
-        if (soapSession == null) {
-            soapSession = SOAPSession.openConnectionTo(new URL(getJiraWebserviceUrl()))
-                                     .usingCredentials(getJiraUser(), getJiraPassword());
-        }
-        return soapSession;
-    }
-
-    public String getJiraUser() {
-        return getConfiguration().getJiraUser();
-    }
-
-    public String getJiraPassword() {
-        return getConfiguration().getJiraPassword();
-    }
-
-    public String getJiraWebserviceUrl() {
-        return getConfiguration().getJiraWebserviceUrl();
+        this.jiraConnection = new JIRAConnection(jiraConfiguration);
     }
 
     @Override
     public String toString() {
-        return "Connection to JIRA instance at " + configuration.getJiraWebserviceUrl()
-                + " with user " + configuration.getJiraUser();
+        return "Connection to JIRA instance at " + jiraConnection.getJiraWebserviceUrl()
+                + " with user " + jiraConnection.getJiraUser();
     }
 
     /**
@@ -98,9 +63,9 @@ public class JiraIssueTracker implements IssueTracker {
     public void addComment(final String issueKey, final String commentText) throws IssueTrackerUpdateException {
 
         try {
-            String token = getSoapSession().getAuthenticationToken();
+            String token = jiraConnection.getAuthenticationToken();
             RemoteComment comment = newCommentWithText(commentText);
-            getSoapSession().getJiraSoapService().addComment(token, issueKey, comment);
+            jiraConnection.getJiraSoapService().addComment(token, issueKey, comment);
         } catch (IOException exception) {
             processJiraException(issueKey, exception);
         }
@@ -112,7 +77,7 @@ public class JiraIssueTracker implements IssueTracker {
             logger.error("No JIRA issue found with key {}", issueKey);
         } else {
             throw new IssueTrackerUpdateException("Could not update JIRA using URL ("
-                                                  + getJiraWebserviceUrl() + ")", exception);
+                                                  + jiraConnection.getJiraWebserviceUrl() + ")", exception);
         }
     }
 
@@ -130,8 +95,8 @@ public class JiraIssueTracker implements IssueTracker {
     public List<IssueComment> getCommentsFor(String issueKey) throws IssueTrackerUpdateException {
         List<IssueComment> results = Collections.emptyList();
         try {
-            String token = getSoapSession().getAuthenticationToken();
-            RemoteComment[] comments = getSoapSession().getJiraSoapService().getComments(token, issueKey);
+            String token = jiraConnection.getAuthenticationToken();
+            RemoteComment[] comments = jiraConnection.getJiraSoapService().getComments(token, issueKey);
             results = convert(comments, new CommentConverter());
 
         } catch (IOException e) {
@@ -142,15 +107,15 @@ public class JiraIssueTracker implements IssueTracker {
 
     public void updateComment(IssueComment issueComment) {
         try {
-            String token = getSoapSession().getAuthenticationToken();
+            String token = jiraConnection.getAuthenticationToken();
 
-            RemoteComment updatedComment = getSoapSession().getJiraSoapService().getComment(token, issueComment.getId());
+            RemoteComment updatedComment = jiraConnection.getJiraSoapService().getComment(token, issueComment.getId());
             updatedComment.setBody(issueComment.getText());
 
-            getSoapSession().getJiraSoapService().editComment(token, updatedComment);
+            jiraConnection.getJiraSoapService().editComment(token, updatedComment);
         } catch (IOException e) {
             throw new IssueTrackerUpdateException("Could not update JIRA using URL ("
-                                                  + getJiraWebserviceUrl() + ")", e);
+                                                  + jiraConnection.getJiraWebserviceUrl() + ")", e);
         }
     }
 
@@ -164,9 +129,9 @@ public class JiraIssueTracker implements IssueTracker {
     public String getStatusFor(final String issueKey) throws IssueTrackerUpdateException {
         String status = null;
         try {
-            String token = getSoapSession().getAuthenticationToken();
+            String token = jiraConnection.getAuthenticationToken();
 
-            RemoteIssue issue = getSoapSession().getJiraSoapService().getIssue(token, issueKey);
+            RemoteIssue issue = jiraConnection.getJiraSoapService().getIssue(token, issueKey);
             checkThatIssueExists(issue, issueKey);
             status = getStatusLabel(issue);
 
@@ -178,13 +143,13 @@ public class JiraIssueTracker implements IssueTracker {
 
     public void doTransition(final String issueKey, final String workflowAction) throws IssueTrackerUpdateException {
         try {
-            String token = getSoapSession().getAuthenticationToken();
-            RemoteIssue issue = getSoapSession().getJiraSoapService().getIssue(token, issueKey);
+            String token = jiraConnection.getAuthenticationToken();
+            RemoteIssue issue = jiraConnection.getJiraSoapService().getIssue(token, issueKey);
             checkThatIssueExists(issue, issueKey);
 
             String actionId = getAvailableActions(issueKey).get(workflowAction);
             if (actionId != null) {
-                getSoapSession().getJiraSoapService().progressWorkflowAction(token, issueKey, actionId, null);
+                jiraConnection.getJiraSoapService().progressWorkflowAction(token, issueKey, actionId, null);
             }
 
         } catch (IOException e) {
@@ -201,8 +166,8 @@ public class JiraIssueTracker implements IssueTracker {
         if (availableActionMap == null) {
             availableActionMap = new HashMap<String, String>();
             try {
-                String token = getSoapSession().getAuthenticationToken();
-                RemoteNamedObject[] actions = getSoapSession().getJiraSoapService().getAvailableActions(token, issueKey);
+                String token = jiraConnection.getAuthenticationToken();
+                RemoteNamedObject[] actions = jiraConnection.getJiraSoapService().getAvailableActions(token, issueKey);
                 for(RemoteNamedObject action : actions) {
                     availableActionMap.put(action.getName(), action.getId());
                 }
@@ -218,14 +183,14 @@ public class JiraIssueTracker implements IssueTracker {
         if (statusCodeMap == null) {
             statusCodeMap = new HashMap<String, String>();
             try {
-                String token = getSoapSession().getAuthenticationToken();
-                RemoteStatus[] statuses = getSoapSession().getJiraSoapService().getStatuses(token);
+                String token = jiraConnection.getAuthenticationToken();
+                RemoteStatus[] statuses = jiraConnection.getJiraSoapService().getStatuses(token);
                 for(RemoteStatus status : statuses) {
                     statusCodeMap.put(status.getId(), status.getName());
                 }
             } catch (IOException e) {
                 throw new IssueTrackerUpdateException("Could not read JIRA using URL ("
-                                                      + getJiraWebserviceUrl() + ")", e);
+                                                      + jiraConnection.getJiraWebserviceUrl() + ")", e);
             }
         }
         return statusCodeMap;
@@ -241,14 +206,14 @@ public class JiraIssueTracker implements IssueTracker {
         if (statusLabelMap == null) {
             statusLabelMap = new HashMap<String, String>();
             try {
-                String token = getSoapSession().getAuthenticationToken();
-                RemoteStatus[] statuses = getSoapSession().getJiraSoapService().getStatuses(token);
+                String token = jiraConnection.getAuthenticationToken();
+                RemoteStatus[] statuses = jiraConnection.getJiraSoapService().getStatuses(token);
                 for(RemoteStatus status : statuses) {
                     statusLabelMap.put(status.getName(), status.getId());
                 }
             } catch (IOException e) {
                 throw new IssueTrackerUpdateException("Could not read JIRA using URL ("
-                                                      + getJiraWebserviceUrl() + ")", e);
+                                                      + jiraConnection.getJiraWebserviceUrl() + ")", e);
             }
         }
         return statusLabelMap;
@@ -263,7 +228,7 @@ public class JiraIssueTracker implements IssueTracker {
 
     private RemoteComment newCommentWithText(final String commentText) {
         RemoteComment comment = new RemoteComment();
-        comment.setAuthor(getJiraUser());
+        comment.setAuthor(jiraConnection.getJiraUser());
         comment.setBody(commentText);
         return comment;
     }

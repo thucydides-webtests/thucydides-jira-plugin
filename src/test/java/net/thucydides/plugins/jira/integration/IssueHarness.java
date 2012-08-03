@@ -23,7 +23,7 @@ class IssueHarness {
         String token = session.getAuthenticationToken();
 
         RemoteIssue issue = new RemoteIssue();
-        issue.setProject("THUCINT");
+        issue.setProject("DEMO");
         issue.setDescription("A test issue");
         issue.setReporter("bruce");
         issue.setType("1");
@@ -42,7 +42,6 @@ class IssueHarness {
         String token = session.getAuthenticationToken();
 
         for(String issueKey : testIssueKeys) {
-
             session.getJiraSoapService().deleteIssue(token, issueKey);
         }
     }

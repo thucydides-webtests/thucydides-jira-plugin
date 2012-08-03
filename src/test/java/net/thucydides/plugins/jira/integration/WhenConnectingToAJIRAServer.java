@@ -18,7 +18,7 @@ import static org.junit.Assert.assertThat;
 
 public class WhenConnectingToAJIRAServer {
 
-    private static final String JIRA_WEBSERVICE_URL = "http://ec2-122-248-221-171.ap-southeast-1.compute.amazonaws.com:8081/rpc/soap/jirasoapservice-v2";
+    private static final String JIRA_WEBSERVICE_URL = "https://wakaleo.atlassian.net/rpc/soap/jirasoapservice-v2";
 
     @Test
     public void a_valid_user_should_be_able_to_open_a_session() throws Exception {

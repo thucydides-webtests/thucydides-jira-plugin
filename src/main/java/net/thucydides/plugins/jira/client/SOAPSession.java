@@ -1,11 +1,9 @@
 package net.thucydides.plugins.jira.client;
 
-import org.apache.axis.AxisFault;
 import thucydides.plugins.jira.soap.JiraSoapService;
 import thucydides.plugins.jira.soap.JiraSoapServiceService;
 import thucydides.plugins.jira.soap.JiraSoapServiceServiceLocator;
 
-import javax.naming.ServiceUnavailableException;
 import javax.xml.rpc.ServiceException;
 import java.net.URL;
 import java.rmi.RemoteException;

@@ -1,7 +1,5 @@
 package net.thucydides.plugins.jira.service;
 
-import net.thucydides.core.ThucydidesSystemProperty;
-
 /**
  * Obtain the JIRA configuration details from system properties.
  */
@@ -17,8 +15,7 @@ public class SystemPropertiesJIRAConfiguration implements JIRAConfiguration {
     }
 
     public String getJiraPassword() {
-        return System.getProperty(JIRA_PASSWORD
-        );
+        return System.getProperty(JIRA_PASSWORD);
     }
 
     public boolean isWikiRenderedActive() {
@@ -27,7 +24,7 @@ public class SystemPropertiesJIRAConfiguration implements JIRAConfiguration {
 
     public String getJiraWebserviceUrl() {
         String baseUrl = System.getProperty(JIRA_URL);
-        return baseUrl + "/rpc/soap/jirasoapservice-v2";
+        return (baseUrl != null) ? baseUrl + "/rpc/soap/jirasoapservice-v2" : null;
     }
 
 

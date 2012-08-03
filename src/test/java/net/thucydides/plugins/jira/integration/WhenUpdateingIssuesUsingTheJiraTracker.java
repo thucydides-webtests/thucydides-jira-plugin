@@ -1,12 +1,7 @@
 package net.thucydides.plugins.jira.integration;
 
-import net.thucydides.core.model.TestOutcome;
-import net.thucydides.core.model.TestResult;
-import net.thucydides.core.model.TestStep;
-import net.thucydides.plugins.jira.JiraListener;
 import net.thucydides.plugins.jira.model.IssueComment;
 import net.thucydides.plugins.jira.model.IssueTracker;
-import net.thucydides.plugins.jira.model.IssueTrackerUpdateException;
 import net.thucydides.plugins.jira.service.JIRAConfiguration;
 import net.thucydides.plugins.jira.service.JiraIssueTracker;
 import org.junit.After;
@@ -29,11 +24,11 @@ public class WhenUpdateingIssuesUsingTheJiraTracker {
 
     IssueTracker tracker;
 
-    private static final String JIRA_WEBSERVICE_URL = "http://ec2-122-248-221-171.ap-southeast-1.compute.amazonaws.com:8081/rpc/soap/jirasoapservice-v2";
+    private static final String JIRA_WEBSERVICE_URL = "https://wakaleo.atlassian.net/rpc/soap/jirasoapservice-v2";
 
     private String issueKey;
 
-    private final String CLOSED_ISSUE = "THUCINT-743";
+    private final String CLOSED_ISSUE = "DEMO-1";
 
     private IssueHarness testIssueHarness;
 
@@ -54,12 +49,7 @@ public class WhenUpdateingIssuesUsingTheJiraTracker {
         testIssueHarness = new IssueHarness(JIRA_WEBSERVICE_URL);
         issueKey = testIssueHarness.createTestIssue();
 
-        tracker = new JiraIssueTracker(logger) {
-            @Override
-            protected JIRAConfiguration getConfiguration() {
-                return configuration;
-            }
-        };
+        tracker = new JiraIssueTracker(logger, configuration);
     }
 
 

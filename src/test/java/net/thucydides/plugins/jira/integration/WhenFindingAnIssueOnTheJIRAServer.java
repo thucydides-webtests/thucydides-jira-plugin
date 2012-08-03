@@ -18,7 +18,7 @@ import static org.junit.Assert.assertThat;
 
 public class WhenFindingAnIssueOnTheJIRAServer {
 
-    private static final String JIRA_WEBSERVICE_URL = "http://ec2-122-248-221-171.ap-southeast-1.compute.amazonaws.com:8081/rpc/soap/jirasoapservice-v2";
+    private static final String JIRA_WEBSERVICE_URL = "https://wakaleo.atlassian.net/rpc/soap/jirasoapservice-v2";
 
     private String issueKey;
 
@@ -43,7 +43,7 @@ public class WhenFindingAnIssueOnTheJIRAServer {
 
         String token = session.getAuthenticationToken();
 
-        RemoteProject project = session.getJiraSoapService().getProjectByKey(token, "THUCINT");
+        RemoteProject project = session.getJiraSoapService().getProjectByKey(token, "DEMO");
         assertThat(project, is(not(nullValue())));
     }
 

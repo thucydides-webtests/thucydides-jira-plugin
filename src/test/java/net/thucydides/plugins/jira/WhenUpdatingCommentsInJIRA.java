@@ -249,7 +249,7 @@ public class WhenUpdatingCommentsInJIRA {
         listener.testSuiteFinished();
 
         verify(issueTracker).addComment(eq("MYPROJECT-123"),
-                contains("[Thucydides Test Results|http://my.server/myproject/thucydides/sample_test_suite.html]"));
+                contains("[Thucydides Test Results|http://my.server/myproject/thucydides/943d172ea9ae02d17aa143fc6a58c972.html]"));
     }
 
     @Test
@@ -261,7 +261,7 @@ public class WhenUpdatingCommentsInJIRA {
         listener.testSuiteFinished();
 
         verify(issueTracker).addComment(eq("MYPROJECT-123"),
-                contains("[Thucydides Test Results|http://my.server/myproject/thucydides/sample_story.html]"));
+                contains("[Thucydides Test Results|http://my.server/myproject/thucydides/0b64cfa5ffab98dcef8a93cf8313bfbd.html]"));
     }
 
     @Test
