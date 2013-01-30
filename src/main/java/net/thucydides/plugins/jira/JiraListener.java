@@ -2,6 +2,7 @@ package net.thucydides.plugins.jira;
 
 import ch.lambdaj.function.convert.Converter;
 import net.thucydides.core.ThucydidesSystemProperty;
+import net.thucydides.core.model.DataTable;
 import net.thucydides.core.model.ReportType;
 import net.thucydides.core.model.Stories;
 import net.thucydides.core.model.Story;
@@ -25,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static ch.lambdaj.Lambda.convert;
@@ -332,5 +334,14 @@ public class JiraListener implements StepListener {
     }
 
     public void notifyScreenChange() {
+    }
+
+    public void useExamplesFrom(DataTable dataTable) {
+    }
+
+    public void exampleStarted(Map<String, String> stringStringMap) {
+    }
+
+    public void exampleFinished() {
     }
 }

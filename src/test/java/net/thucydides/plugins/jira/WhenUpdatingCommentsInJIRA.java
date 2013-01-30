@@ -28,12 +28,10 @@ import java.util.List;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.contains;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -249,7 +247,7 @@ public class WhenUpdatingCommentsInJIRA {
         listener.testSuiteFinished();
 
         verify(issueTracker).addComment(eq("MYPROJECT-123"),
-                contains("[Thucydides Test Results|http://my.server/myproject/thucydides/943d172ea9ae02d17aa143fc6a58c972.html]"));
+                contains("[Thucydides Test Results|http://my.server/myproject/thucydides/8ca09454499728312e6cb3fbfa71b81237b199699f1d8e42fb7d9e9c075f2dc8.html]"));
     }
 
     @Test
@@ -261,7 +259,7 @@ public class WhenUpdatingCommentsInJIRA {
         listener.testSuiteFinished();
 
         verify(issueTracker).addComment(eq("MYPROJECT-123"),
-                contains("[Thucydides Test Results|http://my.server/myproject/thucydides/0b64cfa5ffab98dcef8a93cf8313bfbd.html]"));
+                contains("[Thucydides Test Results|http://my.server/myproject/thucydides/18754b34ebc24301b8f71efda5be4ae4a689db25bb532ab699bdfb6a434507e9.html]"));
     }
 
     @Test
