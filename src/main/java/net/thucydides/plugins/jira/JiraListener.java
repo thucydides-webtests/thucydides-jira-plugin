@@ -189,14 +189,14 @@ public class JiraListener implements StepListener {
         if (existingComment == null) {
             testResultComment = TestResultComment.comment()
                                                   .withResults(testOutcomes)
-                                                  .withReportUrl(linkToReport())
+                                                  .withReportUrl(linkToReport(testOutcomes))
                                                   .withTestRun(testRunNumber).asComment();
 
             issueTracker.addComment(issueId, testResultComment.asText());
         } else {
             testResultComment = TestResultComment.fromText(existingComment.getText())
                                                          .withUpdatedTestResults(testOutcomes)
-                                                         .withUpdatedReportUrl(linkToReport())
+                                                         .withUpdatedReportUrl(linkToReport(testOutcomes))
                                                          .withUpdatedTestRunNumber(testRunNumber);
 
             IssueComment updatedComment = new IssueComment(existingComment.getId(),
@@ -229,7 +229,8 @@ public class JiraListener implements StepListener {
         return Boolean.valueOf(environmentVariables.getProperty("thucydides.skip.jira.updates"));
     }
 
-    private String linkToReport() {
+    private String linkToReport(List<TestOutcome> testOutcomes) {
+        TestOutcome firstTestOutcome = testOutcomes.get(0);
         String reportUrl = environmentVariables.getProperty(ThucydidesSystemProperty.PUBLIC_URL.getPropertyName());
         String reportName = Stories.reportFor(storyUnderTest(), ReportType.HTML);
         return formatTestResultsLink(reportUrl, reportName);

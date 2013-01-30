@@ -27,7 +27,6 @@ class WhenUsingACustomJiraWorkflow extends Specification {
     def "should load a custom workflow defined in the thucydides.jira.workflow system property"() {
 
         expect:
-            println workflow.transitions
             def transitions = workflow.transitions.forTestResult(result).whenIssueIs(issueStatus)
             transitions == expectedTransitions
 
