@@ -7,9 +7,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.is;
+import static org.fest.assertions.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 public class WhenTrackingTestResultsForAnIssue {
@@ -42,7 +40,7 @@ public class WhenTrackingTestResultsForAnIssue {
 
         TestResult recordedResult = resultTally.getResultForIssue("ISSUE-1");
 
-        assertThat(recordedResult, is(TestResult.SUCCESS));
+        assertThat(recordedResult).isEqualTo(TestResult.SUCCESS);
     }
 
     @Test
@@ -55,7 +53,7 @@ public class WhenTrackingTestResultsForAnIssue {
 
         TestResult recordedResult = resultTally.getResultForIssue("ISSUE-1");
 
-        assertThat(recordedResult, is(TestResult.FAILURE));
+        assertThat(recordedResult).isEqualTo(TestResult.FAILURE);
     }
     
     @Test
@@ -66,7 +64,7 @@ public class WhenTrackingTestResultsForAnIssue {
         resultTally.recordResult("ISSUE-1", failingTestOutcome);
         resultTally.recordResult("ISSUE-2", anotherSuccessfulTestOutcome);
 
-        assertThat(resultTally.getIssues(), hasItems("ISSUE-1", "ISSUE-2"));
+        assertThat(resultTally.getIssues()).contains("ISSUE-1", "ISSUE-2");
     }
 
     @Test
@@ -77,7 +75,7 @@ public class WhenTrackingTestResultsForAnIssue {
         resultTally.recordResult("ISSUE-1", failingTestOutcome);
         resultTally.recordResult("ISSUE-2", anotherSuccessfulTestOutcome);
 
-        assertThat(resultTally.getTestOutcomesForIssue("ISSUE-1"), hasItems(successfulTestOutcome, failingTestOutcome));
+        assertThat(resultTally.getTestOutcomesForIssue("ISSUE-1")).contains(successfulTestOutcome, failingTestOutcome);
     }
 
 }

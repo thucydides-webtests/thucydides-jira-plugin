@@ -10,10 +10,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.List;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.fest.assertions.Assertions.assertThat;
 
 public class WhenConfiguringWorkflow {
 
@@ -31,14 +28,14 @@ public class WhenConfiguringWorkflow {
         WorkflowLoader loader = new ClasspathWorkflowLoader("default-workflow.groovy", environmentVariables);
 
         Workflow workflow = loader.load();
-        assertThat(workflow, is(notNullValue()));
+        assertThat(workflow).isNotNull();
 
         List<String> transitionSetMap = workflow.getTransitions()
                                                 .forTestResult(TestResult.SUCCESS)
                                                 .whenIssueIs("In Progress");
 
-        assertThat(transitionSetMap.size(), is(2));
-        assertThat(transitionSetMap, Matchers.hasItems("Stop Progress","Resolve Issue"));
+        assertThat(transitionSetMap).hasSize(2);
+        assertThat(transitionSetMap).contains("Stop Progress","Resolve Issue");
 
     }
 
@@ -51,14 +48,13 @@ public class WhenConfiguringWorkflow {
                 "    'success' should: 'Resolve issue'\n" +
                 " }", true);
 
-        assertThat(workflow, is(notNullValue()));
+        assertThat(workflow).isNotNull();
 
         List<String> transitionSetMap = workflow.getTransitions()
                                                 .forTestResult(TestResult.SUCCESS)
                                                 .whenIssueIs("Open");
 
-        assertThat(transitionSetMap.size(), is(1));
-        assertThat(transitionSetMap, hasItem("Resolve issue"));
+        assertThat(transitionSetMap).containsExactly("Resolve issue");
 
     }
 
@@ -78,14 +74,12 @@ public class WhenConfiguringWorkflow {
                 "                'success' should: ['Stop Progress','Resolve issue']\n" +
                 "            }", true);
 
-        assertThat(workflow, is(notNullValue()));
+        assertThat(workflow).isNotNull();
 
         List<String> transitionSetMap = workflow.getTransitions()
                                                 .forTestResult(TestResult.SUCCESS)
                                                 .whenIssueIs("In Progress");
-
-        assertThat(transitionSetMap.size(), is(2));
-        assertThat(transitionSetMap, Matchers.hasItems("Stop Progress","Resolve issue"));
+        assertThat(transitionSetMap).containsExactly("Stop Progress","Resolve issue");
 
     }
 
