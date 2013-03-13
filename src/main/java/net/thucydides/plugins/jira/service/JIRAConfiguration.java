@@ -12,4 +12,6 @@ public interface JIRAConfiguration {
     String getJiraWebserviceUrl();
 
     boolean isWikiRenderedActive();
+
+    String getProject();
 }

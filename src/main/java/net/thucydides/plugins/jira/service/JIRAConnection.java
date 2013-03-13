@@ -52,6 +52,9 @@ public class JIRAConnection {
         return getSoapSession().getAuthenticationToken();
     }
 
+    public String getProject() {
+        return getConfiguration().getProject();
+    }
     public void logout() {
         this.soapSession = null;
     }
