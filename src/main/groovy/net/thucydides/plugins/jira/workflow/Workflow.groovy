@@ -1,7 +1,5 @@
 package net.thucydides.plugins.jira.workflow
 
-import org.codehaus.groovy.control.CompilerConfiguration
-import net.thucydides.core.model.TestResult
 import net.thucydides.plugins.jira.workflow.TransitionBuilder.TransitionSetMap
 
 /**

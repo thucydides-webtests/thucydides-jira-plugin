@@ -343,6 +343,9 @@ public class JiraListener implements StepListener {
     public void exampleStarted(Map<String, String> stringStringMap) {
     }
 
+    public void exampleStarted() {
+    }
+
     public void exampleFinished() {
     }
 }

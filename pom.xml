@@ -4,11 +4,11 @@
     <parent>
         <artifactId>thucydides</artifactId>
         <groupId>net.thucydides</groupId>
-        <version>0.9.104</version>
+        <version>0.9.108</version>
     </parent>
     <groupId>net.thucydides.plugins.jira</groupId>
     <artifactId>thucydides-jira-plugin</artifactId>
-    <version>0.9.107-SNAPSHOT</version>
+    <version>0.9.108-SNAPSHOT</version>
     <name>thucydides-jira-plugin</name>
     <url>http://www.github.com/thucydides-webtests/thucydides-jira-plugin</url>
 
@@ -51,7 +51,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <surefire.version>2.10</surefire.version>
         <groovy.version>2.1.1</groovy.version>
-        <thucydides.version>0.9.104</thucydides.version>
+        <thucydides.version>0.9.108</thucydides.version>
     </properties>
 
     <build>
