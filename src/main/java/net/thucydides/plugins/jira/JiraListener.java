@@ -322,6 +322,9 @@ public class JiraListener implements StepListener {
     public void stepPending(String s) {
     }
 
+    public void assumptionViolated(String s) {
+    }
+
     public void stepFinished() {
 
     }
