@@ -8,7 +8,7 @@
     </parent>
     <groupId>net.thucydides.plugins.jira</groupId>
     <artifactId>thucydides-jira-plugin</artifactId>
-    <version>0.9.120</version>
+    <version>0.9.121-SNAPSHOT</version>
     <name>thucydides-jira-plugin</name>
     <url>http://www.github.com/thucydides-webtests/thucydides-jira-plugin</url>
 
