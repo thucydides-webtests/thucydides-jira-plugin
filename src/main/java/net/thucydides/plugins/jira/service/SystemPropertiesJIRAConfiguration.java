@@ -1,5 +1,6 @@
 package net.thucydides.plugins.jira.service;
 
+import com.google.inject.Inject;
 import net.thucydides.core.guice.Injectors;
 import net.thucydides.core.util.EnvironmentVariables;
 
@@ -16,10 +17,7 @@ public class SystemPropertiesJIRAConfiguration implements JIRAConfiguration {
     public static final String JIRA_PASSWORD = "jira.password";
     public static final String JIRA_WIKI_RENDERER = "jira.wiki.renderer";
 
-    public SystemPropertiesJIRAConfiguration() {
-        this(Injectors.getInjector().getInstance(EnvironmentVariables.class));
-    }
-
+    @Inject
     public SystemPropertiesJIRAConfiguration(EnvironmentVariables environmentVariables) {
         this.environmentVariables = environmentVariables;
     }

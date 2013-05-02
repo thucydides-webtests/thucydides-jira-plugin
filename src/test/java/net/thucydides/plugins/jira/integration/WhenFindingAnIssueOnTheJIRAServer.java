@@ -58,6 +58,18 @@ public class WhenFindingAnIssueOnTheJIRAServer {
         assertThat(issue, is(not(nullValue())));
     }
 
+
+    @Test
+    public void should_be_able_to_find_an_issue_by_jql() throws Exception {
+        SOAPSession session = SOAPSession.openConnectionTo(new URL(JIRA_WEBSERVICE_URL))
+                .usingCredentials("bruce", "batm0bile");
+
+        String token = session.getAuthenticationToken();
+
+        RemoteIssue[] issues = session.getJiraSoapService().getIssuesFromJqlSearch(token, "key=" + issueKey, 1000);
+        assertThat(issues.length, is(1));
+    }
+
     @Test
     public void should_be_able_to_list_the_comments_in_an_issue() throws Exception {
         SOAPSession session = SOAPSession.openConnectionTo(new URL(JIRA_WEBSERVICE_URL))
