@@ -4,11 +4,11 @@
     <parent>
         <artifactId>thucydides</artifactId>
         <groupId>net.thucydides</groupId>
-        <version>0.9.120</version>
+        <version>0.9.125</version>
     </parent>
     <groupId>net.thucydides.plugins.jira</groupId>
     <artifactId>thucydides-jira-plugin</artifactId>
-    <version>0.9.123-BETA-1-SNAPSHOT</version>
+    <version>0.9.125-SNAPSHOT</version>
     <name>thucydides-jira-plugin</name>
     <url>http://www.github.com/thucydides-webtests/thucydides-jira-plugin</url>
 
@@ -51,7 +51,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <surefire.version>2.10</surefire.version>
         <groovy.version>2.1.1</groovy.version>
-        <thucydides.version>0.9.116</thucydides.version>
+        <thucydides.version>0.9.125</thucydides.version>
     </properties>
 
     <build>
@@ -89,6 +89,17 @@
                         <artifactId>commons-logging</artifactId>
                         <version>1.1</version>
                     </dependency>
+                    <dependency>
+                        <groupId>com.sun.jersey</groupId>
+                        <artifactId>jersey-client</artifactId>
+                        <version>1.17.1</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.json</groupId>
+                        <artifactId>json</artifactId>
+                        <version>20090211</version>
+                    </dependency>
+
                 </dependencies>
             </plugin>
             <plugin>

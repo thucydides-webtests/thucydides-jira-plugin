@@ -21,7 +21,7 @@ import static ch.lambdaj.Lambda.convert;
 /**
  * A JIRA client using the new REST interface
  */
-public class JiraClient {
+public class AtlassianJiraClient {
 
     private final URI url;
     private final String username;
@@ -30,11 +30,11 @@ public class JiraClient {
 
     private final static int DEFAULT_BATCH_SIZE = 100;
 
-    public JiraClient(String url, String username, String password) {
+    public AtlassianJiraClient(String url, String username, String password) {
         this(url, username, password, DEFAULT_BATCH_SIZE);
     }
 
-    public JiraClient(String url, String username, String password, int batchSize) {
+    public AtlassianJiraClient(String url, String username, String password, int batchSize) {
         try {
             this.url = new URI(url);
         } catch (URISyntaxException e) {

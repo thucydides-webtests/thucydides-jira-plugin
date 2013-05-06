@@ -1,14 +1,13 @@
 package net.thucydides.plugins.jira.client
 
 import com.atlassian.jira.rest.client.domain.Issue
-import org.apache.commons.lang3.StringEscapeUtils
 import spock.lang.Specification
 
 class WhenLoadingIssueKeysUsingTheRestClient extends Specification {
 
-    def "should load issue keys with JQL filters"() {
+    def "should load issues with JQL filters"() {
         given:
-            def jiraClient = new JiraClient("https://wakaleo.atlassian.net","bruce","batm0bile")
+            def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net","bruce","batm0bile")
         when:
             List<String> issueKeys = jiraClient.findByJQL("project = 'DEMO' || project != 'DEMO'")
         then:
@@ -17,16 +16,16 @@ class WhenLoadingIssueKeysUsingTheRestClient extends Specification {
 
     def "should load issue keys with JQL filters in batches"() {
         given:
-        def jiraClient = new JiraClient("https://wakaleo.atlassian.net","bruce","batm0bile", 3)
+        def jiraClient = new AtlassianJiraClient("https://wakaleo.atlassian.net","bruce","batm0bile", 3)
         when:
         List<String> issueKeys = jiraClient.findByJQL("project = DEMO")
         then:
         issueKeys.size() > 3
     }
 
-    def "should load issues with JQL filters"() {
+    def "should load issues with JQL filters 2"() {
         given:
-        def jiraClient = new JiraClient("https://wakaleo.atlassian.net","bruce","batm0bile")
+        def jiraClient = new AtlassianJiraClient("https://wakaleo.atlassian.net","bruce","batm0bile")
         when:
         List<Issue> issues = jiraClient.findIssuesByJQL("project = 'DEMO'")
         then:
@@ -35,7 +34,7 @@ class WhenLoadingIssueKeysUsingTheRestClient extends Specification {
 
     def "should load outbound linked issues"() {
         given:
-        def jiraClient = new JiraClient("https://wakaleo.atlassian.net","bruce","batm0bile")
+        def jiraClient = new AtlassianJiraClient("https://wakaleo.atlassian.net","bruce","batm0bile")
         Issue issue = jiraClient.findIssueByKey("DEMO-8")
         when:
         def linkedIssues = jiraClient.findOutboundIssuesWithLink(issue,"Relates");
@@ -46,7 +45,7 @@ class WhenLoadingIssueKeysUsingTheRestClient extends Specification {
 
     def "should load inbound linked issues"() {
         given:
-        def jiraClient = new JiraClient("https://wakaleo.atlassian.net","bruce","batm0bile")
+        def jiraClient = new AtlassianJiraClient("https://wakaleo.atlassian.net","bruce","batm0bile")
         Issue issue = jiraClient.findIssueByKey("DEMO-7")
         when:
         def linkedIssues = jiraClient.findInboundIssuesWithLink(issue,"Relates");
