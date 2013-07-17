@@ -9,6 +9,8 @@ public interface JIRAConfiguration {
 
     String getJiraPassword();
 
+    String getJiraUrl();
+
     String getJiraWebserviceUrl();
 
     boolean isWikiRenderedActive();

@@ -61,10 +61,7 @@ public class JerseyJiraClient {
      */
     public List<IssueSummary> findByJQL(String query) {
 
-        System.out.println("REST QUERY: " + query);
-
         int total = countByJQL(query);
-        System.out.println("COUNTED TOTAL: " + total);
 
         List<IssueSummary> issues = Lists.newArrayList();
         int startAt = 0;
@@ -83,7 +80,6 @@ public class JerseyJiraClient {
             }
             startAt = startAt + getBatchSize();
         }
-        System.out.println("LOADED ISSUES: " + issues);
         return issues;
     }
 
@@ -141,7 +137,6 @@ public class JerseyJiraClient {
     }
 
     private ClientResponse getClientResponse(String resource) {
-        System.out.println("EXECUTING QUERY: " + resource);
         String auth = new String(Base64.encode(username + ":" + password));
         Client client = Client.create();
         WebResource webResource = client.resource(resource);
@@ -151,7 +146,6 @@ public class JerseyJiraClient {
                 .get(ClientResponse.class);
 
         checkAuthentication(response);
-        System.out.println("RETURNING RESPONSE");
         return response;
     }
 

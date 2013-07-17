@@ -43,5 +43,7 @@ public class SystemPropertiesJIRAConfiguration implements JIRAConfiguration {
         return (baseUrl != null) ? baseUrl + "/rpc/soap/jirasoapservice-v2" : null;
     }
 
-
+    public String getJiraUrl() {
+        return environmentVariables.getProperty(JIRA_URL);
+    }
 }

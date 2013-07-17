@@ -119,9 +119,7 @@ public class AtlassianJiraClient {
     }
 
     private Iterable<BasicIssue> findBasicIssuesByJQL(String query) {
-        System.out.println("Searching with query " + query);
         List< BasicIssue > issues = fetchAllIssues(getJiraRestClient().getSearchClient(), query);
-        System.out.println("Issues: ");
         for(BasicIssue issue : issues) { System.out.print(issue.getKey() + " ");}
         return issues;
     }

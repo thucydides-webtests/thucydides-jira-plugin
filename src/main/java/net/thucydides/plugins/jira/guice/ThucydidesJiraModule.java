@@ -2,12 +2,6 @@ package net.thucydides.plugins.jira.guice;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
-import net.thucydides.core.pages.InternalSystemClock;
-import net.thucydides.core.pages.SystemClock;
-import net.thucydides.core.reports.json.ColorScheme;
-import net.thucydides.core.reports.json.RelativeSizeColorScheme;
-import net.thucydides.core.reports.templates.FreeMarkerTemplateManager;
-import net.thucydides.core.reports.templates.TemplateManager;
 import net.thucydides.core.util.EnvironmentVariables;
 import net.thucydides.core.util.SystemEnvironmentVariables;
 import net.thucydides.core.webdriver.Configuration;
