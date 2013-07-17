@@ -51,7 +51,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <surefire.version>2.10</surefire.version>
         <groovy.version>2.1.1</groovy.version>
-        <thucydides.version>0.9.200-SNAPSHOT</thucydides.version>
+        <thucydides.version>0.9.200</thucydides.version>
     </properties>
 
     <build>
@@ -209,12 +209,6 @@
             <artifactId>thucydides-core</artifactId>
             <version>${thucydides.version}</version>
         </dependency>
-        <!--<dependency>-->
-            <!--<groupId>com.atlassian.jira</groupId>-->
-            <!--<artifactId>jira-rest-java-client</artifactId>-->
-            <!--<version>2.0.0-m2</version>-->
-            <!--<optional>true</optional>-->
-        <!--</dependency>-->
         <dependency>
             <groupId>com.sun.jersey</groupId>
             <artifactId>jersey-client</artifactId>
