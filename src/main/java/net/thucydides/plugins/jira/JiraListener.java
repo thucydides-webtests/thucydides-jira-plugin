@@ -3,7 +3,6 @@ package net.thucydides.plugins.jira;
 import ch.lambdaj.function.convert.Converter;
 import net.thucydides.core.ThucydidesSystemProperty;
 import net.thucydides.core.model.DataTable;
-import net.thucydides.core.model.ReportType;
 import net.thucydides.core.model.Stories;
 import net.thucydides.core.model.Story;
 import net.thucydides.core.model.TestOutcome;

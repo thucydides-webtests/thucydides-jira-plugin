@@ -1,6 +1,5 @@
 package net.thucydides.plugins.jira.client
 
-import com.atlassian.jira.rest.client.domain.Issue
 import net.thucydides.plugins.jira.domain.IssueSummary
 import spock.lang.Specification
 

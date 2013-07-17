@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<wsdl:definitions targetNamespace="https://support.avisi.nl/jira/rpc/soap/jirasoapservice-v2" xmlns:apachesoap="http://xml.apache.org/xml-soap" xmlns:impl="https://support.avisi.nl/jira/rpc/soap/jirasoapservice-v2" xmlns:intf="https://support.avisi.nl/jira/rpc/soap/jirasoapservice-v2" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns1="http://beans.soap.rpc.jira.atlassian.com" xmlns:tns2="http://exception.rpc.jira.atlassian.com" xmlns:tns3="http://service.soap.rpc.jira.atlassian.com" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:wsdlsoap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<wsdl:definitions targetNamespace="https://support.avisi.nl/jira/rpc/soap/jirasoapservice-v2"
+                  xmlns:impl="https://support.avisi.nl/jira/rpc/soap/jirasoapservice-v2"
+                  xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/"
+                  xmlns:tns1="http://beans.soap.rpc.jira.atlassian.com"
+                  xmlns:tns2="http://exception.rpc.jira.atlassian.com"
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:wsdlsoap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
 <!--WSDL created by Apache Axis version: 1.3
 Built on Oct 05, 2005 (05:23:37 EDT)-->
  <wsdl:types>

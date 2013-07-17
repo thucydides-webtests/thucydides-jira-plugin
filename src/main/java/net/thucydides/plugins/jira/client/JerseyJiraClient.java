@@ -1,22 +1,11 @@
 package net.thucydides.plugins.jira.client;
 
-import ch.lambdaj.function.convert.Converter;
-import com.atlassian.jira.rest.client.JiraRestClient;
-import com.atlassian.jira.rest.client.JiraRestClientFactory;
-import com.atlassian.jira.rest.client.SearchRestClient;
-import com.atlassian.jira.rest.client.domain.BasicIssue;
-import com.atlassian.jira.rest.client.domain.Issue;
-import com.atlassian.jira.rest.client.domain.IssueLink;
-import com.atlassian.jira.rest.client.domain.IssueLinkType;
-import com.atlassian.jira.rest.client.domain.SearchResult;
-import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClientFactory;
 import com.google.common.collect.Lists;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.core.util.Base64;
 import net.thucydides.plugins.jira.domain.IssueSummary;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,9 +15,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.List;
-
-import static ch.lambdaj.Lambda.convert;
-import static ch.lambdaj.Lambda.map;
 
 /**
  * A JIRA client using the new REST interface

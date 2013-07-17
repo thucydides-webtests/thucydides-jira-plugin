@@ -2,9 +2,9 @@ package net.thucydides.plugins.jira.workflow
 
 import com.google.inject.Inject
 import com.google.inject.name.Named
-import org.slf4j.Logger;
+import net.thucydides.core.util.EnvironmentVariables
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import net.thucydides.core.util.EnvironmentVariables;
 
 class ClasspathWorkflowLoader implements WorkflowLoader {
 

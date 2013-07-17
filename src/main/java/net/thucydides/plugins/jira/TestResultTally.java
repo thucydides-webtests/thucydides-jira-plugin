@@ -2,7 +2,6 @@ package net.thucydides.plugins.jira;
 
 import ch.lambdaj.function.convert.Converter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import net.thucydides.core.model.TestOutcome;
 import net.thucydides.core.model.TestResult;

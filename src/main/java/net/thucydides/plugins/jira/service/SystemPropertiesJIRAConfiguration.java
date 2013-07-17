@@ -1,7 +1,6 @@
 package net.thucydides.plugins.jira.service;
 
 import com.google.inject.Inject;
-import net.thucydides.core.guice.Injectors;
 import net.thucydides.core.util.EnvironmentVariables;
 
 /**

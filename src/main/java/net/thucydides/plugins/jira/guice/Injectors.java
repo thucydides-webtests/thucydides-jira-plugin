@@ -2,7 +2,6 @@ package net.thucydides.plugins.jira.guice;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import net.thucydides.core.guice.ThucydidesModule;
 
 /**
  * Somewhere to hold the Guice injector.

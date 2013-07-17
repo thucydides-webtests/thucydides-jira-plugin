@@ -3,7 +3,6 @@ package net.thucydides.plugins.jira.service;
 
 import ch.lambdaj.function.convert.Converter;
 import com.google.inject.Inject;
-import net.thucydides.plugins.jira.guice.Injectors;
 import net.thucydides.plugins.jira.model.IssueComment;
 import net.thucydides.plugins.jira.model.IssueTracker;
 import net.thucydides.plugins.jira.model.IssueTrackerUpdateException;
