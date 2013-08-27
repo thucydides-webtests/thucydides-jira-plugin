@@ -1,6 +1,10 @@
 package net.thucydides.plugins.jira.domain;
 
+import com.google.common.collect.ImmutableList;
+
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 public class IssueSummary {
 
@@ -9,13 +13,19 @@ public class IssueSummary {
     private final String summary;
     private final String description;
     private final String type;
+    private final List<String> labels;
 
     public IssueSummary(URI self, String key, String summary, String description, String type) {
+        this(self, key, summary, description, type, new ArrayList<String>());
+    }
+
+    public IssueSummary(URI self, String key, String summary, String description, String type, List<String> labels) {
         this.self = self;
         this.key = key;
         this.summary = summary;
         this.description = description;
         this.type = type;
+        this.labels = ImmutableList.copyOf(labels);
     }
 
     public URI getSelf() {
@@ -36,6 +46,10 @@ public class IssueSummary {
 
     public String getType() {
         return type;
+    }
+
+    public List<String> getLabels() {
+        return labels;
     }
 
     @Override

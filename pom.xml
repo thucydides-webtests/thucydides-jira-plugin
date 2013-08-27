@@ -4,11 +4,11 @@
     <parent>
         <artifactId>thucydides</artifactId>
         <groupId>net.thucydides</groupId>
-        <version>0.9.200</version>
+        <version>0.9.205</version>
     </parent>
     <groupId>net.thucydides.plugins.jira</groupId>
     <artifactId>thucydides-jira-plugin</artifactId>
-    <version>0.9.200-SNAPSHOT</version>
+    <version>0.9.205-SNAPSHOT</version>
     <name>thucydides-jira-plugin</name>
     <url>http://www.github.com/thucydides-webtests/thucydides-jira-plugin</url>
 
@@ -210,9 +210,9 @@
             <version>${thucydides.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.sun.jersey</groupId>
+            <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-client</artifactId>
-            <version>1.17.1</version>
+            <version>2.2</version>
         </dependency>
         <dependency>
             <groupId>org.apache.axis</groupId>

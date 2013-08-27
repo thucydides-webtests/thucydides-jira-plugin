@@ -9,7 +9,7 @@ class WhenLoadingIssueKeysUsingTheJerseyClient extends Specification {
         given:
             def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net","bruce","batm0bile")
         when:
-            List<IssueSummary> issues = jiraClient.findByJQL("project = 'DEMO'")
+            List<IssueSummary> issues = jiraClient.findByJQL("project='DEMO'")
         then:
             issues.size() > 10
     }

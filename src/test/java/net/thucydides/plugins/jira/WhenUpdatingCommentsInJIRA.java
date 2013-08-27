@@ -247,7 +247,7 @@ public class WhenUpdatingCommentsInJIRA {
         listener.testSuiteFinished();
 
         verify(issueTracker).addComment(eq("MYPROJECT-123"),
-                contains("[Thucydides Test Results|http://my.server/myproject/thucydides/5b11bffe64a065131fa8c01e19ff40ab876eaf99255f048ba49ea0d6a9c9aeb6.html]"));
+                contains("Thucydides Test Results: http://my.server/myproject/thucydides/5b11bffe64a065131fa8c01e19ff40ab876eaf99255f048ba49ea0d6a9c9aeb6.html"));
     }
 
     @Test
@@ -259,7 +259,7 @@ public class WhenUpdatingCommentsInJIRA {
         listener.testSuiteFinished();
 
         verify(issueTracker).addComment(eq("MYPROJECT-123"),
-                contains("[Thucydides Test Results|http://my.server/myproject/thucydides/2be9ea1462fd7bf1bd2c127dd5ae8b5391263af594d2031979c434b52f5341c7.html]"));
+                contains("Thucydides Test Results: http://my.server/myproject/thucydides/2be9ea1462fd7bf1bd2c127dd5ae8b5391263af594d2031979c434b52f5341c7.html"));
     }
 
     @Test

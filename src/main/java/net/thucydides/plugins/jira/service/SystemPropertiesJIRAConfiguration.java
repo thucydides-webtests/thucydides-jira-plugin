@@ -22,19 +22,33 @@ public class SystemPropertiesJIRAConfiguration implements JIRAConfiguration {
     }
 
     public String getJiraUser() {
-        return environmentVariables.getProperty(JIRA_USERNAME);
+        return getEnvironmentOrSystemProperty(JIRA_USERNAME);
+    }
+
+    private String getEnvironmentOrSystemProperty(String field) {
+        return getEnvironmentOrSystemProperty(field, null);
+    }
+
+    private String getEnvironmentOrSystemProperty(String field, String defaultValue) {
+        if (environmentVariables.getProperty(field) != null) {
+            return environmentVariables.getProperty(field);
+        }
+        if (environmentVariables.getValue(field) != null) {
+            return environmentVariables.getValue(field);
+        }
+        return environmentVariables.getValue(field);
     }
 
     public String getJiraPassword() {
-        return environmentVariables.getProperty(JIRA_PASSWORD);
+        return getEnvironmentOrSystemProperty(JIRA_PASSWORD);
     }
 
     public boolean isWikiRenderedActive() {
-        return Boolean.valueOf(environmentVariables.getProperty(JIRA_WIKI_RENDERER, "true"));
+        return Boolean.valueOf(getEnvironmentOrSystemProperty(JIRA_WIKI_RENDERER, "true"));
     }
 
     public String getProject() {
-        return environmentVariables.getProperty(JIRA_PROJECT);
+        return getEnvironmentOrSystemProperty(JIRA_PROJECT);
     }
 
     public String getJiraWebserviceUrl() {
