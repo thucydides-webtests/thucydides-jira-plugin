@@ -9,18 +9,20 @@ import java.util.List;
 public class IssueSummary {
 
     private final URI self;
+    private final Long id;
     private final String key;
     private final String summary;
     private final String description;
     private final String type;
     private final List<String> labels;
 
-    public IssueSummary(URI self, String key, String summary, String description, String type) {
-        this(self, key, summary, description, type, new ArrayList<String>());
+    public IssueSummary(URI self, Long id, String key, String summary, String description, String type) {
+        this(self, id, key, summary, description, type, new ArrayList<String>());
     }
 
-    public IssueSummary(URI self, String key, String summary, String description, String type, List<String> labels) {
+    public IssueSummary(URI self, Long id, String key, String summary, String description, String type, List<String> labels) {
         this.self = self;
+        this.id = id;
         this.key = key;
         this.summary = summary;
         this.description = description;
@@ -30,6 +32,10 @@ public class IssueSummary {
 
     public URI getSelf() {
         return self;
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public String getKey() {

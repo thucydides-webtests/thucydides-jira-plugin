@@ -102,6 +102,7 @@ public class JerseyJiraClient {
         JSONObject fields = (JSONObject) issueObject.get("fields");
         JSONObject issueType = (JSONObject) fields.get("issuetype");
         return new IssueSummary(uriFrom(issueObject),
+                issueObject.getLong("id"),
                 stringValueOf(issueObject.get("key")),
                 stringValueOf(fields.get("summary")),
                 stringValueOf(fields.get("description")),
