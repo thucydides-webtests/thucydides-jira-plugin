@@ -1,5 +1,6 @@
 package net.thucydides.plugins.jira.client;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import net.thucydides.plugins.jira.domain.IssueSummary;
 import org.glassfish.jersey.client.filter.HttpBasicAuthFilter;
@@ -13,6 +14,7 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
@@ -22,6 +24,7 @@ import java.util.Map;
 public class JerseyJiraClient {
 
     private static final String REST_SEARCH = "rest/api/2/search";
+    private static final int REDIRECT_REQUEST = 302;
     private final String url;
     private final String username;
     private final String password;
@@ -35,6 +38,7 @@ public class JerseyJiraClient {
     }
 
     public JerseyJiraClient(String url, String username, String password, int batchSize) {
+        System.out.println("TARGET JIRA INSTANCE: " + url);
         this.url = url;
         this.username = username;
         this.password = password;
@@ -77,21 +81,22 @@ public class JerseyJiraClient {
                                             .queryParam("jql", query)
                                             .queryParam("startAt", startAt)
                                             .queryParam("maxResults", batchSize)
+                                            .queryParam("expand", "renderedFields")
                                             .queryParam("fields", "key,summary,description,issuetype,labels");
         Response response = target.request().get();
         checkValid(response);
         return response.readEntity(String.class);
     }
 
-    public IssueSummary findByKey(String key) throws JSONException{
-        String jsonResponse = getClientResponse(url, "rest/api/2/issue/" + key);
+    public Optional<IssueSummary> findByKey(String key) throws JSONException {
 
-        try {
-            JSONObject responseObject = new JSONObject(jsonResponse);
-            return convertToIssueSummary(responseObject);
-        } catch (JSONException e) {
-            throw new IllegalArgumentException("JSON error", e);
+        Optional<String> jsonResponse = getClientResponse(url, "rest/api/2/issue/" + key);
+
+        if (jsonResponse.isPresent()) {
+            JSONObject responseObject = new JSONObject(jsonResponse.get());
+            return Optional.of(convertToIssueSummary(responseObject));
         }
+        return Optional.absent();
     }
 
     public Map<String, IssueSummary> findRelatedIssues(String key) {
@@ -100,12 +105,15 @@ public class JerseyJiraClient {
 
     private IssueSummary convertToIssueSummary(JSONObject issueObject) throws JSONException {
         JSONObject fields = (JSONObject) issueObject.get("fields");
+        JSONObject renderedFields = (JSONObject) issueObject.get("renderedFields");
         JSONObject issueType = (JSONObject) fields.get("issuetype");
+        String renderedDescription = renderedFields.getString("description");
         return new IssueSummary(uriFrom(issueObject),
                 issueObject.getLong("id"),
                 stringValueOf(issueObject.get("key")),
                 stringValueOf(fields.get("summary")),
                 stringValueOf(fields.get("description")),
+                renderedDescription,
                 stringValueOf(issueType.get("name")),
                 toList((JSONArray)fields.get("labels")));
     }
@@ -127,10 +135,16 @@ public class JerseyJiraClient {
     }
 
     public int countByJQL(String query) throws JSONException{
+        System.out.println("JIRA COUNT BY JQL: " + query);
 
         WebTarget target = buildWebTargetFor(REST_SEARCH).queryParam("jql", query);
         Response response = target.request().get();
-        checkValid(response);
+
+        if (isEmpty(response)) {
+            return 0;
+        } else {
+            checkValid(response);
+        }
 
         String jsonResponse = response.readEntity(String.class);
 
@@ -144,12 +158,23 @@ public class JerseyJiraClient {
         return total;
     }
 
-    private String getClientResponse(String url, String path) throws JSONException {
+    private Optional<String> getClientResponse(String url, String path) throws JSONException {
+        System.out.println("CALLING JIRA REST CLIENT: URL=" + url + ", path=" +path);
         WebTarget target = restClient().target(url)
-                                       .path(path);
+                                       .path(path)
+                                       .queryParam("expand", "renderedFields");
         Response response = target.request().get();
-        checkValid(response);
-        return response.readEntity(String.class);
+
+        if (response.getStatus() == REDIRECT_REQUEST) {
+            response = Redirector.forPath(path).usingClient(restClient()).followRedirectsIn(response);
+        }
+
+        if (resourceDoesNotExist(response)) {
+            return Optional.absent();
+        } else {
+            checkValid(response);
+            return Optional.of(response.readEntity(String.class));
+        }
     }
 
     public Client restClient() {
@@ -162,6 +187,14 @@ public class JerseyJiraClient {
         } else {
             return null;
         }
+    }
+
+    public boolean resourceDoesNotExist(Response response) {
+        return response.getStatus() == 404;
+    }
+
+    public boolean isEmpty(Response response) {
+        return response.getStatus() == 400;
     }
 
     public void checkValid(Response response) throws JSONException {

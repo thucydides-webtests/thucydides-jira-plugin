@@ -15,17 +15,19 @@ public class IssueSummary {
     private final String description;
     private final String type;
     private final List<String> labels;
+    private final String renderedDescription;
 
-    public IssueSummary(URI self, Long id, String key, String summary, String description, String type) {
-        this(self, id, key, summary, description, type, new ArrayList<String>());
+    public IssueSummary(URI self, Long id, String key, String summary, String description, String renderedDescription, String type) {
+        this(self, id, key, summary, description, renderedDescription, type, new ArrayList<String>());
     }
 
-    public IssueSummary(URI self, Long id, String key, String summary, String description, String type, List<String> labels) {
+    public IssueSummary(URI self, Long id, String key, String summary, String description, String renderedDescription, String type, List<String> labels) {
         this.self = self;
         this.id = id;
         this.key = key;
         this.summary = summary;
         this.description = description;
+        this.renderedDescription = renderedDescription;
         this.type = type;
         this.labels = ImmutableList.copyOf(labels);
     }
@@ -48,6 +50,10 @@ public class IssueSummary {
 
     public String getDescription() {
         return description;
+    }
+
+    public String getRenderedDescription() {
+        return renderedDescription;
     }
 
     public String getType() {

@@ -127,6 +127,9 @@ public class JiraListener implements StepListener {
         }
     }
 
+    public void testRetried() {
+    }
+
     private void tallyResults(TestOutcome result, List<String> issues) {
         for(String issue : issues) {
             resultTally.recordResult(issue, result);
