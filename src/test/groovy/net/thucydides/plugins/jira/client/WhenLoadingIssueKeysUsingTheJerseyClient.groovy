@@ -68,14 +68,5 @@ class WhenLoadingIssueKeysUsingTheJerseyClient extends Specification {
             total == 0
     }
 
-//    def "should follow redirections"() {
-//        given:
-//            def client = Mock(Client)
-//        when:
-//            def redirector = Redirector.forPath("mypath").usingClient(client);
-//        then:
-//
-//    }
-
     InputStream streamed(String source) { new ByteArrayInputStream(source.bytes) }
 }

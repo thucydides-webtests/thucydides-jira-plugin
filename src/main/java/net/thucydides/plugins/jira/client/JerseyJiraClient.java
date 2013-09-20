@@ -3,10 +3,12 @@ package net.thucydides.plugins.jira.client;
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import net.thucydides.plugins.jira.domain.IssueSummary;
+import net.thucydides.plugins.jira.domain.Version;
 import org.glassfish.jersey.client.filter.HttpBasicAuthFilter;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -14,21 +16,22 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.List;
-import java.util.Map;
 
 /**
  * A JIRA client using the new REST interface
  */
 public class JerseyJiraClient {
 
-    private static final String REST_SEARCH = "rest/api/2/search";
+    private static final String REST_SEARCH = "rest/api/latest/search";
+    private static final String VERSIONS_SEARCH = "rest/api/latest/project/%s/versions";
     private static final int REDIRECT_REQUEST = 302;
     private final String url;
     private final String username;
     private final String password;
     private final int batchSize;
+
+    private final org.slf4j.Logger logger = LoggerFactory.getLogger(JerseyJiraClient.class);
 
     private final static int DEFAULT_BATCH_SIZE = 100;
     private final static int OK = 200;
@@ -38,7 +41,6 @@ public class JerseyJiraClient {
     }
 
     public JerseyJiraClient(String url, String username, String password, int batchSize) {
-        System.out.println("TARGET JIRA INSTANCE: " + url);
         this.url = url;
         this.username = username;
         this.password = password;
@@ -48,7 +50,7 @@ public class JerseyJiraClient {
     /**
      * Load the issue keys for all of the issues matching the specified JQL query
      *
-     * @param query
+     * @param query A valid JQL query
      * @return a list of JIRA issue keys
      */
     public List<IssueSummary> findByJQL(String query) throws JSONException {
@@ -72,6 +74,20 @@ public class JerseyJiraClient {
         return issues;
     }
 
+
+    public List<Version> findVersionsForProject(String projectName) throws JSONException {
+        List<Version> versions = Lists.newArrayList();
+
+        String versionData = getJSONProjectVersions(projectName);
+        JSONArray versionEntries = new JSONArray(versionData);
+        for (int i = 0; i < versionEntries.length(); i++) {
+            JSONObject issueObject = versionEntries.getJSONObject(i);
+            versions.add(convertToVersion(issueObject));
+        }
+        return versions;
+    }
+
+
     public WebTarget buildWebTargetFor(String path) {
         return restClient().target(url).path(path);
     }
@@ -88,6 +104,14 @@ public class JerseyJiraClient {
         return response.readEntity(String.class);
     }
 
+    private String getJSONProjectVersions(String projectName) throws JSONException{
+        String url = String.format(VERSIONS_SEARCH,projectName);
+        WebTarget target = buildWebTargetFor(url);
+        Response response = target.request().get();
+        checkValid(response);
+        return response.readEntity(String.class);
+    }
+
     public Optional<IssueSummary> findByKey(String key) throws JSONException {
 
         Optional<String> jsonResponse = getClientResponse(url, "rest/api/2/issue/" + key);
@@ -99,23 +123,44 @@ public class JerseyJiraClient {
         return Optional.absent();
     }
 
-    public Map<String, IssueSummary> findRelatedIssues(String key) {
-        throw new UnsupportedOperationException();
+    private Version convertToVersion(JSONObject issueObject) throws JSONException {
+        try {
+            return new Version(uriFrom(issueObject),
+                    issueObject.getLong("id"),
+                    stringValueOf(issueObject.get("name")),
+                    booleanValueOf(issueObject.get("archived")),
+                    booleanValueOf(issueObject.get("released")));
+        } catch (JSONException e) {
+            logger.error("Could not load issue from JSON",e);
+            logger.error("JSON:" + issueObject.toString(4));
+            throw e;
+        }
     }
 
     private IssueSummary convertToIssueSummary(JSONObject issueObject) throws JSONException {
+
         JSONObject fields = (JSONObject) issueObject.get("fields");
         JSONObject renderedFields = (JSONObject) issueObject.get("renderedFields");
         JSONObject issueType = (JSONObject) fields.get("issuetype");
-        String renderedDescription = renderedFields.getString("description");
-        return new IssueSummary(uriFrom(issueObject),
-                issueObject.getLong("id"),
-                stringValueOf(issueObject.get("key")),
-                stringValueOf(fields.get("summary")),
-                stringValueOf(fields.get("description")),
-                renderedDescription,
-                stringValueOf(issueType.get("name")),
-                toList((JSONArray)fields.get("labels")));
+        String renderedDescription = stringValueOf(optional(renderedFields,"description"));
+        try {
+            return new IssueSummary(uriFrom(issueObject),
+                    issueObject.getLong("id"),
+                    stringValueOf(issueObject.get("key")),
+                    stringValueOf(fields.get("summary")),
+                    stringValueOf(optional(fields,"description")),
+                    renderedDescription,
+                    stringValueOf(issueType.get("name")),
+                    toList((JSONArray) fields.get("labels")));
+        } catch (JSONException e) {
+            logger.error("Could not load issue from JSON",e);
+            logger.error("JSON:" + issueObject.toString(4));
+            throw e;
+        }
+    }
+
+    private Object optional(JSONObject fields, String fieldName) throws JSONException {
+        return (fields.has(fieldName) ? fields.get(fieldName) : null);
     }
 
     private List<String> toList(JSONArray array) throws JSONException {
@@ -135,8 +180,6 @@ public class JerseyJiraClient {
     }
 
     public int countByJQL(String query) throws JSONException{
-        System.out.println("JIRA COUNT BY JQL: " + query);
-
         WebTarget target = buildWebTargetFor(REST_SEARCH).queryParam("jql", query);
         Response response = target.request().get();
 
@@ -148,7 +191,7 @@ public class JerseyJiraClient {
 
         String jsonResponse = response.readEntity(String.class);
 
-        int total = 0;
+        int total;
         try {
             JSONObject responseObject = new JSONObject(jsonResponse);
             total = (Integer) responseObject.get("total");
@@ -159,7 +202,6 @@ public class JerseyJiraClient {
     }
 
     private Optional<String> getClientResponse(String url, String path) throws JSONException {
-        System.out.println("CALLING JIRA REST CLIENT: URL=" + url + ", path=" +path);
         WebTarget target = restClient().target(url)
                                        .path(path)
                                        .queryParam("expand", "renderedFields");
@@ -186,6 +228,14 @@ public class JerseyJiraClient {
             return field.toString();
         } else {
             return null;
+        }
+    }
+
+    private boolean booleanValueOf(Object field) {
+        if (field != null) {
+            return Boolean.valueOf(field.toString());
+        } else {
+            return false;
         }
     }
 
