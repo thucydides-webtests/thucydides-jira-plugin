@@ -152,7 +152,7 @@ public class JiraListener implements StepListener {
         }
     }
 
-    private Set<String> issueReferencesIn(TestOutcome result) {
+    private List<String> issueReferencesIn(TestOutcome result) {
         return result.getIssues();
     }
 
@@ -278,7 +278,7 @@ public class JiraListener implements StepListener {
         };
     }
 
-    private List<String> stripInitialHashesFrom(final Set<String> issueNumbers) {
+    private List<String> stripInitialHashesFrom(final List<String> issueNumbers) {
         return convert(issueNumbers, toIssueNumbersWithoutHashes());
     }
 
