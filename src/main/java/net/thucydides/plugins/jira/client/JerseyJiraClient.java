@@ -76,9 +76,13 @@ public class JerseyJiraClient {
 
 
     public List<Version> findVersionsForProject(String projectName) throws JSONException {
+        String versionData = getJSONProjectVersions(projectName);
+        return convertJSONVersions(versionData);
+    }
+
+    private List<Version> convertJSONVersions(String versionData) throws JSONException {
         List<Version> versions = Lists.newArrayList();
 
-        String versionData = getJSONProjectVersions(projectName);
         JSONArray versionEntries = new JSONArray(versionData);
         for (int i = 0; i < versionEntries.length(); i++) {
             JSONObject issueObject = versionEntries.getJSONObject(i);
@@ -86,7 +90,6 @@ public class JerseyJiraClient {
         }
         return versions;
     }
-
 
     public WebTarget buildWebTargetFor(String path) {
         return restClient().target(url).path(path);
@@ -98,7 +101,7 @@ public class JerseyJiraClient {
                                             .queryParam("startAt", startAt)
                                             .queryParam("maxResults", batchSize)
                                             .queryParam("expand", "renderedFields")
-                                            .queryParam("fields", "key,summary,description,issuetype,labels");
+                                            .queryParam("fields", "key,summary,description,issuetype,labels,fixVersions");
         Response response = target.request().get();
         checkValid(response);
         return response.readEntity(String.class);
@@ -151,7 +154,8 @@ public class JerseyJiraClient {
                     stringValueOf(optional(fields,"description")),
                     renderedDescription,
                     stringValueOf(issueType.get("name")),
-                    toList((JSONArray) fields.get("labels")));
+                    toList((JSONArray) fields.get("labels")),
+                    toListOfVersions((JSONArray) fields.get("fixVersions")));
         } catch (JSONException e) {
             logger.error("Could not load issue from JSON",e);
             logger.error("JSON:" + issueObject.toString(4));
@@ -167,6 +171,15 @@ public class JerseyJiraClient {
         List<String> list = Lists.newArrayList();
         for (int i = 0; i < array.length(); i++) {
             list.add(stringValueOf(array.get(i)));
+        }
+        return list;
+    }
+
+    private List<String> toListOfVersions(JSONArray array) throws JSONException {
+        List<String> list = Lists.newArrayList();
+        for (int i = 0; i < array.length(); i++) {
+            JSONObject versionObject = (JSONObject) array.get(i);
+            list.add(versionObject.getString("name"));
         }
         return list;
     }

@@ -6,7 +6,7 @@ import spock.lang.Specification
 
 import javax.ws.rs.client.Client
 
-class WhenLoadingIssueKeysUsingTheJerseyClient extends Specification {
+class WhenLoadingJIRAIssues extends Specification {
 
     def "should load issue keys with JQL filters"() {
         given:
@@ -49,6 +49,18 @@ class WhenLoadingIssueKeysUsingTheJerseyClient extends Specification {
             !issue.isPresent()
     }
 
+    def "should load the fix versions for an issue "() {
+        given:
+            def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net","bruce","batm0bile")
+        when:
+            Optional<IssueSummary> issue = jiraClient.findByKey("DEMO-2")
+        then:
+            issue.get().fixVersions.size() == 2
+        and:
+            issue.get().fixVersions.contains("Version 1.0")
+        and:
+            issue.get().fixVersions.contains("Iteration 1.1")
+    }
 
     def "should not freak out if a JQL query doesn't return any issues"() {
         given:

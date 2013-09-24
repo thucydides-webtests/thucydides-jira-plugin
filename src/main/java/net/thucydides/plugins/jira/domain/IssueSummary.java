@@ -16,12 +16,13 @@ public class IssueSummary {
     private final String type;
     private final List<String> labels;
     private final String renderedDescription;
+    private final List<String> fixVersions;
 
     public IssueSummary(URI self, Long id, String key, String summary, String description, String renderedDescription, String type) {
-        this(self, id, key, summary, description, renderedDescription, type, new ArrayList<String>());
+        this(self, id, key, summary, description, renderedDescription, type, new ArrayList<String>(), new ArrayList<String>());
     }
 
-    public IssueSummary(URI self, Long id, String key, String summary, String description, String renderedDescription, String type, List<String> labels) {
+    public IssueSummary(URI self, Long id, String key, String summary, String description, String renderedDescription, String type, List<String> labels, List<String> fixVersions) {
         this.self = self;
         this.id = id;
         this.key = key;
@@ -30,6 +31,7 @@ public class IssueSummary {
         this.renderedDescription = renderedDescription;
         this.type = type;
         this.labels = ImmutableList.copyOf(labels);
+        this.fixVersions = ImmutableList.copyOf(fixVersions);
     }
 
     public URI getSelf() {
@@ -62,6 +64,10 @@ public class IssueSummary {
 
     public List<String> getLabels() {
         return labels;
+    }
+
+    public List<String> getFixVersions() {
+        return fixVersions;
     }
 
     @Override

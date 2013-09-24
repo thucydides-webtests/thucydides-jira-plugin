@@ -16,4 +16,5 @@ class WhenFindingVersions extends Specification {
             versions.collect {it.name} == ['Iteration 1.1', 'Version 1.0', 'Iteration 1.2', 'Version 2.0', 'Iteration 2.1', 'Iteration 2.2']
     }
 
+
 }
