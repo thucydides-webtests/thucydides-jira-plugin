@@ -7,7 +7,6 @@ import org.junit.Test;
 import thucydides.plugins.jira.soap.RemoteComment;
 import thucydides.plugins.jira.soap.RemoteIssue;
 import thucydides.plugins.jira.soap.RemoteProject;
-import thucydides.plugins.jira.soap.RemoteStatus;
 
 import java.net.URL;
 
@@ -32,14 +31,14 @@ public class WhenFindingAnIssueOnTheJIRAServer {
     }
 
     @After
-    public void  deleteTestIssue() throws Exception {
+    public void deleteTestIssue() throws Exception {
         testIssueHarness.deleteTestIssues();
     }
 
     @Test
     public void should_be_able_to_find_a_project_by_key() throws Exception {
         SOAPSession session = SOAPSession.openConnectionTo(new URL(JIRA_WEBSERVICE_URL))
-                                         .usingCredentials("bruce", "batm0bile");
+                .usingCredentials("bruce", "batm0bile");
 
         String token = session.getAuthenticationToken();
 
@@ -50,7 +49,7 @@ public class WhenFindingAnIssueOnTheJIRAServer {
     @Test
     public void should_be_able_to_find_an_issue_by_id() throws Exception {
         SOAPSession session = SOAPSession.openConnectionTo(new URL(JIRA_WEBSERVICE_URL))
-                                             .usingCredentials("bruce", "batm0bile");
+                .usingCredentials("bruce", "batm0bile");
 
         String token = session.getAuthenticationToken();
 
@@ -73,7 +72,7 @@ public class WhenFindingAnIssueOnTheJIRAServer {
     @Test
     public void should_be_able_to_list_the_comments_in_an_issue() throws Exception {
         SOAPSession session = SOAPSession.openConnectionTo(new URL(JIRA_WEBSERVICE_URL))
-                                             .usingCredentials("bruce", "batm0bile");
+                .usingCredentials("bruce", "batm0bile");
 
         String token = session.getAuthenticationToken();
 
@@ -89,7 +88,7 @@ public class WhenFindingAnIssueOnTheJIRAServer {
     @Test
     public void should_be_able_to_add_a_new_comment_to_an_issue() throws Exception {
         SOAPSession session = SOAPSession.openConnectionTo(new URL(JIRA_WEBSERVICE_URL))
-                                             .usingCredentials("bruce", "batm0bile");
+                .usingCredentials("bruce", "batm0bile");
 
         String token = session.getAuthenticationToken();
 
@@ -106,7 +105,7 @@ public class WhenFindingAnIssueOnTheJIRAServer {
     public void should_be_able_to_read_the_existing_comments_on_an_issue() throws Exception {
 
         SOAPSession session = SOAPSession.openConnectionTo(new URL(JIRA_WEBSERVICE_URL))
-                                             .usingCredentials("bruce", "batm0bile");
+                .usingCredentials("bruce", "batm0bile");
 
         String token = session.getAuthenticationToken();
 
@@ -129,7 +128,7 @@ public class WhenFindingAnIssueOnTheJIRAServer {
     public void should_be_able_to_read_the_status_of_an_issue() throws Exception {
 
         SOAPSession session = SOAPSession.openConnectionTo(new URL(JIRA_WEBSERVICE_URL))
-                                             .usingCredentials("bruce", "batm0bile");
+                .usingCredentials("bruce", "batm0bile");
 
         String token = session.getAuthenticationToken();
         String status = session.getJiraSoapService().getIssue(token, issueKey).getStatus();

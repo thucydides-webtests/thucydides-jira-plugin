@@ -4,7 +4,6 @@ import net.thucydides.core.util.EnvironmentVariables;
 import net.thucydides.core.util.MockEnvironmentVariables;
 import net.thucydides.plugins.jira.service.JIRAConfiguration;
 import net.thucydides.plugins.jira.service.SystemPropertiesJIRAConfiguration;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 

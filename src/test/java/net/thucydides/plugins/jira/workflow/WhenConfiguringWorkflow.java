@@ -2,7 +2,6 @@ package net.thucydides.plugins.jira.workflow;
 
 import net.thucydides.core.model.TestResult;
 import net.thucydides.core.util.EnvironmentVariables;
-import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -31,11 +30,11 @@ public class WhenConfiguringWorkflow {
         assertThat(workflow).isNotNull();
 
         List<String> transitionSetMap = workflow.getTransitions()
-                                                .forTestResult(TestResult.SUCCESS)
-                                                .whenIssueIs("In Progress");
+                .forTestResult(TestResult.SUCCESS)
+                .whenIssueIs("In Progress");
 
         assertThat(transitionSetMap).hasSize(2);
-        assertThat(transitionSetMap).contains("Stop Progress","Resolve Issue");
+        assertThat(transitionSetMap).contains("Stop Progress", "Resolve Issue");
 
     }
 
@@ -45,14 +44,14 @@ public class WhenConfiguringWorkflow {
 
         Workflow workflow = new Workflow("testflow",
                 " when 'Open', {\n" +
-                "    'success' should: 'Resolve issue'\n" +
-                " }", true);
+                        "    'success' should: 'Resolve issue'\n" +
+                        " }", true);
 
         assertThat(workflow).isNotNull();
 
         List<String> transitionSetMap = workflow.getTransitions()
-                                                .forTestResult(TestResult.SUCCESS)
-                                                .whenIssueIs("Open");
+                .forTestResult(TestResult.SUCCESS)
+                .whenIssueIs("Open");
 
         assertThat(transitionSetMap).containsExactly("Resolve issue");
 
@@ -63,23 +62,23 @@ public class WhenConfiguringWorkflow {
 
         Workflow workflow = new Workflow("testflow",
                 "             when 'Open', {\n" +
-                "                'success' should: 'Resolve issue'\n" +
-                "            }\n" +
-                "\n" +
-                "            when 'Resolved', {\n" +
-                "                'failure' should: 'Reopen issue'\n" +
-                "            }\n" +
-                "\n" +
-                "            when 'In Progress', {\n" +
-                "                'success' should: ['Stop Progress','Resolve issue']\n" +
-                "            }", true);
+                        "                'success' should: 'Resolve issue'\n" +
+                        "            }\n" +
+                        "\n" +
+                        "            when 'Resolved', {\n" +
+                        "                'failure' should: 'Reopen issue'\n" +
+                        "            }\n" +
+                        "\n" +
+                        "            when 'In Progress', {\n" +
+                        "                'success' should: ['Stop Progress','Resolve issue']\n" +
+                        "            }", true);
 
         assertThat(workflow).isNotNull();
 
         List<String> transitionSetMap = workflow.getTransitions()
-                                                .forTestResult(TestResult.SUCCESS)
-                                                .whenIssueIs("In Progress");
-        assertThat(transitionSetMap).containsExactly("Stop Progress","Resolve issue");
+                .forTestResult(TestResult.SUCCESS)
+                .whenIssueIs("In Progress");
+        assertThat(transitionSetMap).containsExactly("Stop Progress", "Resolve issue");
 
     }
 
