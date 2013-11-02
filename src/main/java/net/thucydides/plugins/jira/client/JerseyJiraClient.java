@@ -1,9 +1,13 @@
 package net.thucydides.plugins.jira.client;
 
+import com.beust.jcommander.internal.Maps;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import net.thucydides.plugins.jira.domain.IssueSummary;
 import net.thucydides.plugins.jira.domain.Version;
+import net.thucydides.plugins.jira.model.CascadingSelectOption;
+import net.thucydides.plugins.jira.model.CustomField;
 import org.glassfish.jersey.client.filter.HttpBasicAuthFilter;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -16,35 +20,64 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+
+import static java.util.Collections.EMPTY_LIST;
 
 /**
  * A JIRA client using the new REST interface
  */
+@SuppressWarnings("unchecked")
 public class JerseyJiraClient {
 
     private static final String REST_SEARCH = "rest/api/latest/search";
     private static final String VERSIONS_SEARCH = "rest/api/latest/project/%s/versions";
     private static final int REDIRECT_REQUEST = 302;
+    private static final String DEFAULT_ISSUE_TYPE = "Bug";
     private final String url;
     private final String username;
     private final String password;
     private final int batchSize;
+    private final String project;
+    private final List<String> customFields;
+    private Map<String, CustomField> customFieldsIndex;
+    private String metadataIssueType;
 
     private final org.slf4j.Logger logger = LoggerFactory.getLogger(JerseyJiraClient.class);
 
     private final static int DEFAULT_BATCH_SIZE = 100;
     private final static int OK = 200;
 
-    public JerseyJiraClient(String url, String username, String password) {
-        this(url, username, password, DEFAULT_BATCH_SIZE);
+    public JerseyJiraClient(String url, String username, String password, String project) {
+        this(url, username, password, DEFAULT_BATCH_SIZE, project);
     }
 
-    public JerseyJiraClient(String url, String username, String password, int batchSize) {
+
+    public JerseyJiraClient(String url, String username, String password, int batchSize,
+                            String project,
+                            String metadataIssueType,
+                            List<String> customFields) {
         this.url = url;
         this.username = username;
         this.password = password;
         this.batchSize = batchSize;
+        this.project = project;
+        this.metadataIssueType = metadataIssueType;
+        this.customFields = ImmutableList.copyOf(customFields);
+    }
+
+    public JerseyJiraClient(String url, String username, String password, int batchSize, String project) {
+        this(url,username,password,batchSize,project, DEFAULT_ISSUE_TYPE, EMPTY_LIST);
+    }
+
+    public JerseyJiraClient usingCustomFields(List<String> customFields) {
+        return new JerseyJiraClient(url, username, password, batchSize, project, metadataIssueType, customFields);
+    }
+
+    public JerseyJiraClient usingMetadataIssueType(String metadataIssueType) {
+        return new JerseyJiraClient(url, username, password, batchSize, project, metadataIssueType, customFields);
     }
 
     /**
@@ -117,7 +150,7 @@ public class JerseyJiraClient {
 
     public Optional<IssueSummary> findByKey(String key) throws JSONException {
 
-        Optional<String> jsonResponse = getClientResponse(url, "rest/api/2/issue/" + key);
+        Optional<String> jsonResponse = readFieldValues(url, "rest/api/2/issue/" + key);
 
         if (jsonResponse.isPresent()) {
             JSONObject responseObject = new JSONObject(jsonResponse.get());
@@ -155,11 +188,74 @@ public class JerseyJiraClient {
                     renderedDescription,
                     stringValueOf(issueType.get("name")),
                     toList((JSONArray) fields.get("labels")),
-                    toListOfVersions((JSONArray) fields.get("fixVersions")));
+                    toListOfVersions((JSONArray) fields.get("fixVersions")),
+                    customFieldValuesIn(fields));
         } catch (JSONException e) {
             logger.error("Could not load issue from JSON",e);
             logger.error("JSON:" + issueObject.toString(4));
             throw e;
+        }
+    }
+
+    private Map<String, Object> customFieldValuesIn(JSONObject fields) throws JSONException {
+        Map<String, Object> customFieldValues = Maps.newHashMap();
+        for (String customFieldName : customFields) {
+            CustomField customField = getCustomFieldsIndex().get(customFieldName);
+            if (customFieldDefined(fields, customField)) {
+                Object customFieldValue = readFieldValue(fields, customField);
+                customFieldValues.put(customFieldName, customFieldValue);
+            }
+        }
+        return customFieldValues;
+    }
+
+    private boolean customFieldDefined(JSONObject fields, CustomField customField) throws JSONException {
+        return (customField != null) && (fields.has(customField.getId())) && (!fields.get(customField.getId()).equals(null));
+    }
+
+    private Object readFieldValue(JSONObject fields, CustomField customField) throws JSONException {
+        JSONObject field = new JSONObject(fields.getString(customField.getId()));
+
+        if (customField.getType().equals("string")) {
+            return field.getString("value");
+        } else if (customField.getType().equals("array")) {
+            return readListFrom(field);
+        }
+        return field.get("value");
+    }
+
+    private List<String> readListFrom(JSONObject jsonField) throws JSONException {
+        List<String> values = Lists.newArrayList();
+        values.add(jsonField.getString("value"));
+        if (jsonField.has("child")) {
+            values.addAll(readListFrom(jsonField.getJSONObject("child")));
+        }
+        return values;
+    }
+
+    private List<CustomField> convertToCustomFields(JSONArray customFieldsList) throws JSONException {
+
+        List<CustomField> customFields = Lists.newArrayList();
+
+        for (int i = 0; i < customFieldsList.length(); i++) {
+            JSONObject fieldObject = customFieldsList.getJSONObject(i);
+            customFields.add(convertToCustomField(fieldObject));
+        }
+        return customFields;
+
+    }
+
+    private CustomField convertToCustomField(JSONObject fieldObject) throws JSONException {
+        return new CustomField(fieldObject.getString("id"),
+                fieldObject.getString("name"),
+                fieldTypeOf(fieldObject));
+    }
+
+    private String fieldTypeOf(JSONObject fieldObject) throws JSONException {
+        if (fieldObject.has("schema")) {
+            return fieldObject.getJSONObject("schema").getString("type");
+        } else {
+            return "string";
         }
     }
 
@@ -214,10 +310,33 @@ public class JerseyJiraClient {
         return total;
     }
 
-    private Optional<String> getClientResponse(String url, String path) throws JSONException {
+    private Optional<String> readFieldValues(String url, String path) throws JSONException {
         WebTarget target = restClient().target(url)
                                        .path(path)
                                        .queryParam("expand", "renderedFields");
+
+        Response response = target.request().get();
+
+        if (response.getStatus() == REDIRECT_REQUEST) {
+            response = Redirector.forPath(path).usingClient(restClient()).followRedirectsIn(response);
+        }
+
+        if (resourceDoesNotExist(response)) {
+            return Optional.absent();
+        } else {
+            checkValid(response);
+            return Optional.of(response.readEntity(String.class));
+        }
+    }
+
+    private Optional<String> readFieldMetadata(String url, String path) throws JSONException {
+        WebTarget target = restClient().target(url)
+                .path(path)
+                .queryParam("expand", "renderedFields")
+                .queryParam("project", project)
+                .queryParam("issuetypeName",metadataIssueType)
+                .queryParam("expand","projects.issuetypes.fields");
+
         Response response = target.request().get();
 
         if (response.getStatus() == REDIRECT_REQUEST) {
@@ -276,5 +395,84 @@ public class JerseyJiraClient {
 
     public int getBatchSize() {
         return batchSize;
+    }
+
+    private Map<String, CustomField> getCustomFieldsIndex() throws JSONException {
+        if (customFieldsIndex == null) {
+             customFieldsIndex = indexCustomFields();
+        }
+        return customFieldsIndex;
+    }
+
+    private Map<String, CustomField> indexCustomFields() throws JSONException {
+        Map<String, CustomField> index = Maps.newHashMap();
+        for(CustomField field : getExistingCustomFields()) {
+            index.put(field.getName(), field);
+        }
+        return index;
+    }
+
+    private List<CustomField> getExistingCustomFields() throws JSONException {
+
+        Optional<String> jsonResponse = readFieldValues(url, "rest/api/2/field");
+
+        if (jsonResponse.isPresent()) {
+            JSONArray responseObject = new JSONArray(jsonResponse.get());
+            return convertToCustomFields(responseObject);
+        }
+        return EMPTY_LIST;
+    }
+
+    List<CustomField> getCustomFields() throws JSONException {
+        List<CustomField> registeredCustomFields = Lists.newArrayList();
+        for(String fieldName : customFields) {
+            registeredCustomFields.add(getCustomFieldsIndex().get(fieldName));
+        }
+        return registeredCustomFields;
+    }
+
+    public List<CascadingSelectOption> findOptionsForCascadingSelect(String fieldName) throws JSONException {
+        Optional<String> jsonResponse = readFieldMetadata(url, "rest/api/2/issue/createmeta");
+        if (jsonResponse.isPresent()) {
+            JSONObject responseObject = new JSONObject(jsonResponse.get());
+
+            JSONObject fields = responseObject.getJSONArray("projects")
+                    .getJSONObject(0)
+                    .getJSONArray("issuetypes")
+                    .getJSONObject(0).getJSONObject("fields");
+
+            Iterator fieldKeys = fields.keys();
+
+            while(fieldKeys.hasNext()) {
+                String entryFieldName = (String) fieldKeys.next();
+                JSONObject entry = fields.getJSONObject(entryFieldName);
+                if (entry.getString("name").equalsIgnoreCase(fieldName)) {
+                    return convertToCascadingSelectOptions(entry.getJSONArray("allowedValues"));
+                }
+            }
+        }
+        return EMPTY_LIST;
+    }
+
+    private List<CascadingSelectOption> convertToCascadingSelectOptions(JSONArray allowedValues) throws JSONException {
+        return convertToCascadingSelectOptions(allowedValues, null);
+    }
+
+    private List<CascadingSelectOption> convertToCascadingSelectOptions(JSONArray allowedValues,
+                                                                        CascadingSelectOption parentOption) throws JSONException {
+        List<CascadingSelectOption> options = Lists.newArrayList();
+        for(int i = 0; i < allowedValues.length(); i++) {
+            JSONObject entry = (JSONObject) allowedValues.get(i);
+            String value = entry.getString("value");
+
+            CascadingSelectOption option = new CascadingSelectOption(value, parentOption);
+            List<CascadingSelectOption> children = Lists.newArrayList();
+            if (entry.has("children")) {
+                children = convertToCascadingSelectOptions(entry.getJSONArray("children"), option);
+            }
+            option.addChildren(children);
+            options.add(option);
+        }
+        return options;
     }
 }

@@ -5,7 +5,7 @@ import spock.lang.Specification
 
 class WhenFindingVersions extends Specification {
 
-    def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net","bruce","batm0bile")
+    def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net","bruce","batm0bile","DEMO")
 
     def "should load all known versions for a given project"() {
         when:

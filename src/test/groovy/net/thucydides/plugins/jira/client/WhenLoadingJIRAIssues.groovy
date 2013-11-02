@@ -8,7 +8,7 @@ class WhenLoadingJIRAIssues extends Specification {
 
     def "should load issue keys with JQL filters"() {
         given:
-        def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net", "bruce", "batm0bile")
+        def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net", "bruce", "batm0bile","DEMO")
         when:
         List<IssueSummary> issues = jiraClient.findByJQL("project='DEMO'")
         then:
@@ -17,7 +17,7 @@ class WhenLoadingJIRAIssues extends Specification {
 
     def "should load issue summary by key"() {
         given:
-        def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net", "bruce", "batm0bile")
+        def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net", "bruce", "batm0bile","DEMO")
         when:
         Optional<IssueSummary> issue = jiraClient.findByKey("DEMO-8")
         then:
@@ -29,7 +29,7 @@ class WhenLoadingJIRAIssues extends Specification {
 
     def "should load rendered descriptions"() {
         given:
-        def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net", "bruce", "batm0bile")
+        def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net", "bruce", "batm0bile","DEMO")
         when:
         Optional<IssueSummary> issue = jiraClient.findByKey("TRAD-8")
         then:
@@ -40,7 +40,7 @@ class WhenLoadingJIRAIssues extends Specification {
 
     def "should not load issue by key if the issue is not available"() {
         given:
-        def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net", "bruce", "batm0bile")
+        def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net", "bruce", "batm0bile","DEMO")
         when:
         Optional<IssueSummary> issue = jiraClient.findByKey("DEMO-DOES-NOT-EXIST")
         then:
@@ -49,7 +49,7 @@ class WhenLoadingJIRAIssues extends Specification {
 
     def "should load the fix versions for an issue "() {
         given:
-        def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net", "bruce", "batm0bile")
+        def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net", "bruce", "batm0bile","DEMO")
         when:
         Optional<IssueSummary> issue = jiraClient.findByKey("DEMO-2")
         then:
@@ -62,7 +62,7 @@ class WhenLoadingJIRAIssues extends Specification {
 
     def "should not freak out if a JQL query doesn't return any issues"() {
         given:
-        def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net", "bruce", "batm0bile")
+        def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net", "bruce", "batm0bile","DEMO")
         when:
         List<IssueSummary> issue = jiraClient.findByJQL("key=DEMO-DOES-NOT-EXIST")
         then:
@@ -71,7 +71,7 @@ class WhenLoadingJIRAIssues extends Specification {
 
     def "should not freak out if a JQL count doesn't return any issues"() {
         given:
-        def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net", "bruce", "batm0bile")
+        def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net", "bruce", "batm0bile","DEMO")
         when:
         def total = jiraClient.countByJQL("key=DEMO-DOES-NOT-EXIST")
         then:
