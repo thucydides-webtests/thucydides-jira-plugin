@@ -431,25 +431,32 @@ public class JerseyJiraClient {
         return registeredCustomFields;
     }
 
-    public List<CascadingSelectOption> findOptionsForCascadingSelect(String fieldName) throws JSONException {
-        Optional<String> jsonResponse = readFieldMetadata(url, "rest/api/2/issue/createmeta");
-        if (jsonResponse.isPresent()) {
-            JSONObject responseObject = new JSONObject(jsonResponse.get());
+    public List<CascadingSelectOption> findOptionsForCascadingSelect(String fieldName) {
+        JSONObject responseObject = null;
+        try {
+            Optional<String> jsonResponse = readFieldMetadata(url, "rest/api/2/issue/createmeta");
+            if (jsonResponse.isPresent()) {
+                responseObject = new JSONObject(jsonResponse.get());
 
-            JSONObject fields = responseObject.getJSONArray("projects")
-                    .getJSONObject(0)
-                    .getJSONArray("issuetypes")
-                    .getJSONObject(0).getJSONObject("fields");
+                JSONObject fields = responseObject.getJSONArray("projects")
+                        .getJSONObject(0)
+                        .getJSONArray("issuetypes")
+                        .getJSONObject(0).getJSONObject("fields");
 
-            Iterator fieldKeys = fields.keys();
+                Iterator fieldKeys = fields.keys();
 
-            while(fieldKeys.hasNext()) {
-                String entryFieldName = (String) fieldKeys.next();
-                JSONObject entry = fields.getJSONObject(entryFieldName);
-                if (entry.getString("name").equalsIgnoreCase(fieldName)) {
-                    return convertToCascadingSelectOptions(entry.getJSONArray("allowedValues"));
+                while(fieldKeys.hasNext()) {
+                    String entryFieldName = (String) fieldKeys.next();
+                    JSONObject entry = fields.getJSONObject(entryFieldName);
+                    if (entry.getString("name").equalsIgnoreCase(fieldName)) {
+                        return convertToCascadingSelectOptions(entry.getJSONArray("allowedValues"));
+                    }
                 }
             }
+        } catch (JSONException e) {
+            logger.error("Could not read cascading select options", e);
+            logger.info("responseObject = " + responseObject);
+
         }
         return EMPTY_LIST;
     }
@@ -459,7 +466,7 @@ public class JerseyJiraClient {
     }
 
     private List<CascadingSelectOption> convertToCascadingSelectOptions(JSONArray allowedValues,
-                                                                        CascadingSelectOption parentOption) throws JSONException {
+                CascadingSelectOption parentOption) throws JSONException {
         List<CascadingSelectOption> options = Lists.newArrayList();
         for(int i = 0; i < allowedValues.length(); i++) {
             JSONObject entry = (JSONObject) allowedValues.get(i);
