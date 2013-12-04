@@ -2,6 +2,8 @@ package net.thucydides.plugins.jira.client;
 
 import com.beust.jcommander.internal.Maps;
 import com.google.common.base.Optional;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import net.thucydides.plugins.jira.domain.IssueSummary;
@@ -23,6 +25,7 @@ import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import static java.util.Collections.EMPTY_LIST;
 
@@ -44,6 +47,9 @@ public class JerseyJiraClient {
     private final List<String> customFields;
     private Map<String, CustomField> customFieldsIndex;
     private String metadataIssueType;
+    private LoadingCache<String , Optional<IssueSummary>> issueSummaryCache;
+    private LoadingCache<String , List<IssueSummary>> issueQueryCache;
+    private LoadingCache<String , Integer> issueCountCache;
 
     private final org.slf4j.Logger logger = LoggerFactory.getLogger(JerseyJiraClient.class);
 
@@ -66,6 +72,16 @@ public class JerseyJiraClient {
         this.project = project;
         this.metadataIssueType = metadataIssueType;
         this.customFields = ImmutableList.copyOf(customFields);
+        this.issueSummaryCache = CacheBuilder.newBuilder()
+                .maximumSize(1000)
+                .build(new FindByKeyLoader(this));
+        this.issueQueryCache = CacheBuilder.newBuilder()
+                .maximumSize(1000)
+                .build(new FindByJQLLoader(this));
+        this.issueCountCache = CacheBuilder.newBuilder()
+                .maximumSize(1000)
+                .build(new CountByKeyLoader(this));
+
     }
 
     public JerseyJiraClient(String url, String username, String password, int batchSize, String project) {
@@ -87,6 +103,14 @@ public class JerseyJiraClient {
      * @return a list of JIRA issue keys
      */
     public List<IssueSummary> findByJQL(String query) throws JSONException {
+        try {
+            return issueQueryCache.get(query);
+        } catch (ExecutionException e) {
+            throw new JSONException(e.getCause());
+        }
+    }
+
+    protected List<IssueSummary> loadByJQL(String query) throws JSONException {
 
         int total = countByJQL(query);
 
@@ -104,9 +128,9 @@ public class JerseyJiraClient {
             }
             startAt = startAt + getBatchSize();
         }
+
         return issues;
     }
-
 
     public List<Version> findVersionsForProject(String projectName) throws JSONException {
         String versionData = getJSONProjectVersions(projectName);
@@ -149,6 +173,14 @@ public class JerseyJiraClient {
     }
 
     public Optional<IssueSummary> findByKey(String key) throws JSONException {
+        try {
+            return issueSummaryCache.get(key);
+        } catch (ExecutionException e) {
+            throw new JSONException(e.getCause());
+        }
+    }
+
+    public Optional<IssueSummary> loadByKey(String key) throws JSONException {
 
         Optional<String> jsonResponse = readFieldValues(url, "rest/api/2/issue/" + key);
 
@@ -288,7 +320,16 @@ public class JerseyJiraClient {
         }
     }
 
-    public int countByJQL(String query) throws JSONException{
+    public Integer countByJQL(String query) throws JSONException{
+        return loadCountByJQL(query);
+//        try {
+//            return issueCountCache.get(query);
+//        } catch (ExecutionException e) {
+//            throw new JSONException(e.getCause());
+//        }
+    }
+
+    protected Integer loadCountByJQL(String query) throws JSONException{
         WebTarget target = buildWebTargetFor(REST_SEARCH).queryParam("jql", query);
         Response response = target.request().get();
 
@@ -482,4 +523,5 @@ public class JerseyJiraClient {
         }
         return options;
     }
+
 }
