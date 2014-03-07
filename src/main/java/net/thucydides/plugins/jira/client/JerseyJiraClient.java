@@ -49,7 +49,6 @@ public class JerseyJiraClient {
     private String metadataIssueType;
     private LoadingCache<String , Optional<IssueSummary>> issueSummaryCache;
     private LoadingCache<String , List<IssueSummary>> issueQueryCache;
-    private LoadingCache<String , Integer> issueCountCache;
 
     private final org.slf4j.Logger logger = LoggerFactory.getLogger(JerseyJiraClient.class);
 
@@ -78,10 +77,6 @@ public class JerseyJiraClient {
         this.issueQueryCache = CacheBuilder.newBuilder()
                 .maximumSize(1000)
                 .build(new FindByJQLLoader(this));
-        this.issueCountCache = CacheBuilder.newBuilder()
-                .maximumSize(1000)
-                .build(new CountByKeyLoader(this));
-
     }
 
     public JerseyJiraClient(String url, String username, String password, int batchSize, String project) {
@@ -424,15 +419,24 @@ public class JerseyJiraClient {
         int status = response.getStatus();
         if (status != OK) {
             switch(status) {
-                case 401 : throw new IllegalArgumentException("Authentication error (401) for user " + this.username);
-                case 403 : throw new IllegalArgumentException("Forbidden error (403) for user " + this.username);
-                case 404 : throw new IllegalArgumentException("Service not found (404) - try checking the JIRA URL?");
-                case 407 : throw new IllegalArgumentException("Proxy authentication required (407)");
+                case 401 : handleAuthenticationError("Authentication error (401) for user " + this.username);
+                case 403 : handleAuthenticationError("Forbidden error (403) for user " + this.username);
+                case 404 : handleConfigurationError("Service not found (404) - try checking the JIRA URL?");
+                case 407 : handleConfigurationError("Proxy authentication required (407)");
                 default:
                     throw new JSONException("JIRA query failed: error " + status);
             }
         }
     }
+
+    private void handleAuthenticationError(String message) {
+        throw new JIRAAuthenticationError(message);
+    }
+
+    private void handleConfigurationError(String message) {
+        throw new JIRAConfigurationError(message);
+    }
+
 
     public int getBatchSize() {
         return batchSize;
