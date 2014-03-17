@@ -59,6 +59,10 @@ public class JerseyJiraClient {
         this(url, username, password, DEFAULT_BATCH_SIZE, project);
     }
 
+    public JerseyJiraClient(String url, String username, String password, String project, List<String> customFields) {
+        this(url, username, password, DEFAULT_BATCH_SIZE, project, DEFAULT_ISSUE_TYPE, customFields);
+    }
+
 
     public JerseyJiraClient(String url, String username, String password, int batchSize,
                             String project,
