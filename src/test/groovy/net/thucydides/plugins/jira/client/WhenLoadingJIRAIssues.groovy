@@ -35,7 +35,7 @@ class WhenLoadingJIRAIssues extends Specification {
         then:
         issue.isPresent()
         and:
-        issue.get().renderedDescription.contains("<h2>")
+        issue.get().rendered.description.contains("<h2>")
     }
 
     def "should not load issue by key if the issue is not available"() {

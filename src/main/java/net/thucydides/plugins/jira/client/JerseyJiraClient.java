@@ -2,6 +2,7 @@ package net.thucydides.plugins.jira.client;
 
 import com.beust.jcommander.internal.Maps;
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
@@ -46,6 +47,7 @@ public class JerseyJiraClient {
     private final String project;
     private final List<String> customFields;
     private Map<String, CustomField> customFieldsIndex;
+    private Map<String, String> customFieldNameIndex;
     private String metadataIssueType;
     private LoadingCache<String , Optional<IssueSummary>> issueSummaryCache;
     private LoadingCache<String , List<IssueSummary>> issueQueryCache;
@@ -103,9 +105,12 @@ public class JerseyJiraClient {
      */
     public List<IssueSummary> findByJQL(String query) throws JSONException {
         try {
+            Preconditions.checkNotNull(query,"JIRA key cannot be null");
             return issueQueryCache.get(query);
         } catch (ExecutionException e) {
             throw new JSONException(e.getCause());
+        } catch (RuntimeException runtimeException) {
+            throw new JSONException(runtimeException.getCause());
         }
     }
 
@@ -173,9 +178,12 @@ public class JerseyJiraClient {
 
     public Optional<IssueSummary> findByKey(String key) throws JSONException {
         try {
+            Preconditions.checkNotNull(key,"JIRA key cannot be null");
             return issueSummaryCache.get(key);
         } catch (ExecutionException e) {
             throw new JSONException(e.getCause());
+        } catch (RuntimeException runtimeException) {
+            throw new JSONException(runtimeException.getCause());
         }
     }
 
@@ -209,18 +217,18 @@ public class JerseyJiraClient {
         JSONObject fields = (JSONObject) issueObject.get("fields");
         JSONObject renderedFields = (JSONObject) issueObject.get("renderedFields");
         JSONObject issueType = (JSONObject) fields.get("issuetype");
-        String renderedDescription = stringValueOf(optional(renderedFields,"description"));
         try {
+            Map<String, String> renderedFieldValues = renderedFieldValuesFrom(renderedFields);
             return new IssueSummary(uriFrom(issueObject),
                     issueObject.getLong("id"),
                     stringValueOf(issueObject.get("key")),
                     stringValueOf(fields.get("summary")),
                     stringValueOf(optional(fields,"description")),
-                    renderedDescription,
+                    renderedFieldValues,
                     stringValueOf(issueType.get("name")),
                     toList((JSONArray) fields.get("labels")),
                     toListOfVersions((JSONArray) fields.get("fixVersions")),
-                    customFieldValuesIn(fields));
+                    customFieldValuesIn(fields,renderedFields));
         } catch (JSONException e) {
             logger.error("Could not load issue from JSON",e);
             logger.error("JSON:" + issueObject.toString(4));
@@ -228,11 +236,25 @@ public class JerseyJiraClient {
         }
     }
 
-    private Map<String, Object> customFieldValuesIn(JSONObject fields) throws JSONException {
+    private Map<String, String> renderedFieldValuesFrom(JSONObject renderedFields) throws JSONException {
+        Map<String,String> renderedFieldMap = Maps.newHashMap();
+        for(Object key : Lists.newArrayList(renderedFields.sortedKeys())) {
+            String fieldName = (String) key;
+            String renderedValue = renderedFields.getString(fieldName);
+            if (getCustomFieldNameIndex().containsKey(fieldName)) {
+                fieldName = getCustomFieldNameIndex().get(key);
+            }
+            renderedFieldMap.put(fieldName, renderedValue);
+
+        }
+        return renderedFieldMap;
+    }
+
+    private Map<String, Object> customFieldValuesIn(JSONObject fields, JSONObject renderedFields) throws JSONException {
         Map<String, Object> customFieldValues = Maps.newHashMap();
         for (String customFieldName : customFields) {
             CustomField customField = getCustomFieldsIndex().get(customFieldName);
-            if (customFieldDefined(fields, customField)) {
+            if (customFieldDefined(fields, renderedFields, customField)) {
                 Object customFieldValue = readFieldValue(fields, customField);
                 customFieldValues.put(customFieldName, customFieldValue);
             }
@@ -240,19 +262,35 @@ public class JerseyJiraClient {
         return customFieldValues;
     }
 
-    private boolean customFieldDefined(JSONObject fields, CustomField customField) throws JSONException {
-        return (customField != null) && (fields.has(customField.getId())) && (!fields.get(customField.getId()).equals(null));
+    private boolean customFieldDefined(JSONObject fields, JSONObject renderedFields, CustomField customField) throws JSONException {
+        if (customField != null) {
+            return (hasCustomFieldValue(fields, customField) || hasCustomFieldValue(renderedFields, customField));
+        } else {
+            return false;
+        }
+    }
+
+    private boolean hasCustomFieldValue(JSONObject fields, CustomField customField) throws JSONException {
+        return (fields.has(customField.getId())) && (!fields.get(customField.getId()).equals(null));
     }
 
     private Object readFieldValue(JSONObject fields, CustomField customField) throws JSONException {
-        JSONObject field = new JSONObject(fields.getString(customField.getId()));
+        String fieldValue = (fields.has(customField.getId())) ? fields.getString(customField.getId()) : null;
 
-        if (customField.getType().equals("string")) {
-            return field.getString("value");
-        } else if (customField.getType().equals("array")) {
-            return readListFrom(field);
+        if (isJSON(fieldValue)) {
+            JSONObject field = new JSONObject(fieldValue);
+
+            if (customField.getType().equals("string")) {
+                return field.getString("value");
+            } else if (customField.getType().equals("array")) {
+                return readListFrom(field);
+            }
         }
-        return field.get("value");
+        return fieldValue;
+    }
+
+    private boolean isJSON(String fieldValue) {
+        return fieldValue.trim().startsWith("{");
     }
 
     private List<String> readListFrom(JSONObject jsonField) throws JSONException {
@@ -452,6 +490,24 @@ public class JerseyJiraClient {
         }
         return customFieldsIndex;
     }
+
+    private Map<String, String> getCustomFieldNameIndex() throws JSONException {
+        if (customFieldNameIndex == null) {
+            customFieldNameIndex = indexCustomFieldNames();
+        }
+        return customFieldNameIndex;
+    }
+
+
+
+    private Map<String, String> indexCustomFieldNames() throws JSONException {
+        Map<String, String> index = Maps.newHashMap();
+        for(CustomField field : getExistingCustomFields()) {
+            index.put(field.getId(), field.getName());
+        }
+        return index;
+    }
+
 
     private Map<String, CustomField> indexCustomFields() throws JSONException {
         Map<String, CustomField> index = Maps.newHashMap();

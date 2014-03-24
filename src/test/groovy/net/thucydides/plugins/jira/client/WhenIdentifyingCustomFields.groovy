@@ -37,16 +37,29 @@ class WhenIdentifyingCustomFields extends Specification {
             options[0].nestedOptions[0].parentOption.get() == options[0]
     }
 
-    def "should be able to read custom field values as objects"() {
+
+    def "should be able to read custom field values as rendered HTML if available"() {
         given:
             def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net", "bruce", "batm0bile","DEMO").
-                    usingCustomFields(["capability"])
+                             usingCustomFields(["User Story"])
         when:
             def issue = jiraClient.findByKey("DEMO-8").get()
         then:
-            issue.customField("capability").isPresent()
+            issue.customField("User Story").isPresent()
         and:
-            issue.customField("capability").get().value() == "Grow Potatoes"
+            issue.rendered.customField("User Story").get() == "<p>Grow <b>BIG</b> Potatoes</p>"
+    }
+
+    def "should be able to read custom field values in non-rendered format"() {
+        given:
+            def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net", "bruce", "batm0bile","DEMO").
+                    usingCustomFields(["User Story"])
+        when:
+            def issue = jiraClient.findByKey("DEMO-8").get()
+        then:
+            issue.customField("User Story").isPresent()
+        and:
+            issue.customField("User Story").get().value() == "Grow *BIG* Potatoes"
     }
 
     def "should be able to read custom field values of a given type"() {

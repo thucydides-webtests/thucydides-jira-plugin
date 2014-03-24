@@ -22,6 +22,7 @@ public class SystemPropertiesJIRAConfiguration implements JIRAConfiguration {
     public static final String JIRA_PASSWORD = "jira.password";
     public static final String JIRA_WIKI_RENDERER = "jira.wiki.renderer";
 
+
     private final Logger logger = LoggerFactory.getLogger(SystemPropertiesJIRAConfiguration.class);
 
     @Inject

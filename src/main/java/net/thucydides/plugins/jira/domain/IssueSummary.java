@@ -20,23 +20,23 @@ public class IssueSummary {
     private final String description;
     private final String type;
     private final List<String> labels;
-    private final String renderedDescription;
     private final List<String> fixVersions;
     private final Map<String, Object> customFieldValues;
+    private final Map<String, String> renderedFieldValues;
 
-    public IssueSummary(URI self, Long id, String key, String summary, String description, String renderedDescription, String type) {
-        this(self, id, key, summary, description, renderedDescription, type,
+    public IssueSummary(URI self, Long id, String key, String summary, String description, Map<String, String> renderedFieldValues, String type) {
+        this(self, id, key, summary, description, renderedFieldValues, type,
                 new ArrayList<String>(), new ArrayList<String>(), new HashMap<String, Object>());
     }
 
-    public IssueSummary(URI self, Long id, String key, String summary, String description, String renderedDescription,
+    public IssueSummary(URI self, Long id, String key, String summary, String description, Map<String, String> renderedFieldValues,
                         String type, List<String> labels, List<String> fixVersions, Map<String, Object> customFields) {
         this.self = self;
         this.id = id;
         this.key = key;
         this.summary = summary;
         this.description = description;
-        this.renderedDescription = renderedDescription;
+        this.renderedFieldValues = renderedFieldValues;
         this.type = type;
         this.labels = ImmutableList.copyOf(labels);
         this.fixVersions = ImmutableList.copyOf(fixVersions);
@@ -61,10 +61,6 @@ public class IssueSummary {
 
     public String getDescription() {
         return description;
-    }
-
-    public String getRenderedDescription() {
-        return renderedDescription;
     }
 
     public String getType() {
@@ -93,6 +89,10 @@ public class IssueSummary {
         } else {
             return Optional.of(new CustomFieldCast(customFieldValues.get(fieldName)));
         }
+    }
+
+    public RenderedView getRendered() {
+        return new RenderedView(renderedFieldValues);
     }
 
 }
