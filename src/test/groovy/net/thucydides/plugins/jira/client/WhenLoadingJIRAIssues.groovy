@@ -1,18 +1,31 @@
 package net.thucydides.plugins.jira.client
 
 import com.google.common.base.Optional
+import com.google.common.collect.Lists
 import net.thucydides.plugins.jira.domain.IssueSummary
 import spock.lang.Specification
 
 class WhenLoadingJIRAIssues extends Specification {
 
-    def "should load issue keys with JQL filters"() {
+    def "should load issues with JQL filters"() {
         given:
         def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net", "bruce", "batm0bile","DEMO")
         when:
         List<IssueSummary> issues = jiraClient.findByJQL("project='DEMO'")
         then:
         issues.size() > 10
+    }
+
+
+    def "should load issues complete with custom fields using a JQL filter"() {
+        given:
+            def jiraClient = new JerseyJiraClient("https://wakaleo.atlassian.net", "bruce", "batm0bile","DEMO",["User Story"])
+        when:
+            List<IssueSummary> issues = jiraClient.findByJQL("project='TRADEME' and type='Epic'")
+        then:
+            issues.each {
+                assert it.customField("User Story") != null
+            }
     }
 
     def "should load issue summary by key"() {

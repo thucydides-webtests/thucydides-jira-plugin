@@ -157,15 +157,27 @@ public class JerseyJiraClient {
     }
 
     private String getJSONResponse(String query, int startAt) throws JSONException{
+
+        String fields = "key,summary,description,issuetype,labels,fixVersions";
+        fields = addCustomFieldsTo(fields);
+
         WebTarget target = buildWebTargetFor(REST_SEARCH)
                                             .queryParam("jql", query)
                                             .queryParam("startAt", startAt)
                                             .queryParam("maxResults", batchSize)
                                             .queryParam("expand", "renderedFields")
-                                            .queryParam("fields", "key,summary,description,issuetype,labels,fixVersions");
+                                            .queryParam("fields", fields);
         Response response = target.request().get();
         checkValid(response);
         return response.readEntity(String.class);
+    }
+
+    private String addCustomFieldsTo(String fields) throws JSONException {
+
+        for(String customField : customFields) {
+            fields = fields + "," + getCustomFieldsIndex().get(customField).getId();
+        }
+        return fields;
     }
 
     private String getJSONProjectVersions(String projectName) throws JSONException{
@@ -275,18 +287,24 @@ public class JerseyJiraClient {
     }
 
     private Object readFieldValue(JSONObject fields, CustomField customField) throws JSONException {
-        String fieldValue = (fields.has(customField.getId())) ? fields.getString(customField.getId()) : null;
+
+        String fieldId = customField.getId();
+        String fieldValue = fieldIsDefined(fields, fieldId) ? fields.getString(fieldId) : "";
 
         if (isJSON(fieldValue)) {
             JSONObject field = new JSONObject(fieldValue);
 
             if (customField.getType().equals("string")) {
-                return field.getString("value");
+                return (field == JSONObject.NULL) ? "" : field.getString("value");
             } else if (customField.getType().equals("array")) {
                 return readListFrom(field);
             }
         }
         return fieldValue;
+    }
+
+    private boolean fieldIsDefined(JSONObject fields, String fieldId) throws JSONException {
+        return (fields.has(fieldId) && (fields.get(fieldId) != JSONObject.NULL));
     }
 
     private boolean isJSON(String fieldValue) {
