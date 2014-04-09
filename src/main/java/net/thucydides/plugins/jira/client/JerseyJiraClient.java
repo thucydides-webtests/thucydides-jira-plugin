@@ -175,7 +175,9 @@ public class JerseyJiraClient {
     private String addCustomFieldsTo(String fields) throws JSONException {
 
         for(String customField : customFields) {
-            fields = fields + "," + getCustomFieldsIndex().get(customField).getId();
+            if (getCustomFieldsIndex().containsKey(customField)) {
+                fields = fields + "," + getCustomFieldsIndex().get(customField).getId();
+            }
         }
         return fields;
     }

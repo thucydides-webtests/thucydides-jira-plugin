@@ -4,7 +4,7 @@
     <parent>
         <artifactId>thucydides</artifactId>
         <groupId>net.thucydides</groupId>
-        <version>0.9.236</version>
+        <version>0.9.238</version>
     </parent>
     <groupId>net.thucydides.plugins.jira</groupId>
     <artifactId>thucydides-jira-plugin</artifactId>
@@ -51,7 +51,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <surefire.version>2.10</surefire.version>
         <groovy.version>2.2.1</groovy.version>
-        <thucydides.version>0.9.235</thucydides.version>
+        <thucydides.version>0.9.238</thucydides.version>
     </properties>
 
     <build>
