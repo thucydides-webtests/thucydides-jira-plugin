@@ -236,7 +236,9 @@ public class JiraListener implements StepListener {
     private String linkToReport(List<TestOutcome> testOutcomes) {
         TestOutcome firstTestOutcome = testOutcomes.get(0);
         String reportUrl = environmentVariables.getProperty(ThucydidesSystemProperty.PUBLIC_URL.getPropertyName());
-        String reportName = firstTestOutcome.getReportName() + ".html"; //Stories.reportFor(storyUnderTest(), ReportType.HTML);
+		String methodName = firstTestOutcome.getMethodName();
+		String baseMethodName = methodName.contains("[") ? methodName.substring(0,methodName.indexOf("[")) : methodName;
+        String reportName = firstTestOutcome.withMethodName(baseMethodName).getReportName() + ".html";
         return formatTestResultsLink(reportUrl, reportName);
     }
 
