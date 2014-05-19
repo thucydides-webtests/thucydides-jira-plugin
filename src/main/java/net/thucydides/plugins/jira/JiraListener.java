@@ -68,7 +68,7 @@ public class JiraListener implements StepListener {
 
     private void logStatus(EnvironmentVariables environmentVariables) {
         String jiraUrl = environmentVariables.getProperty(ThucydidesSystemProperty.JIRA_URL.getPropertyName());
-        String reportUrl = environmentVariables.getProperty(ThucydidesSystemProperty.PUBLIC_URL.getPropertyName());
+        String reportUrl = environmentVariables.getProperty(ThucydidesSystemProperty.THUCYDIDES_PUBLIC_URL.getPropertyName());
         LOGGER.debug("JIRA LISTENER STATUS");
         LOGGER.debug("JIRA URL: {} ", jiraUrl);
         LOGGER.debug("REPORT URL: {} ", reportUrl);
@@ -78,7 +78,7 @@ public class JiraListener implements StepListener {
     protected boolean shouldUpdateIssues() {
 
         String jiraUrl = environmentVariables.getProperty(ThucydidesSystemProperty.JIRA_URL.getPropertyName());
-        String reportUrl = environmentVariables.getProperty(ThucydidesSystemProperty.PUBLIC_URL.getPropertyName());
+        String reportUrl = environmentVariables.getProperty(ThucydidesSystemProperty.THUCYDIDES_PUBLIC_URL.getPropertyName());
         if (workflow.isActive()) {
             LOGGER.debug("WORKFLOW TRANSITIONS: {}", workflow.getTransitions());
         }
@@ -235,7 +235,7 @@ public class JiraListener implements StepListener {
 
     private String linkToReport(List<TestOutcome> testOutcomes) {
         TestOutcome firstTestOutcome = testOutcomes.get(0);
-        String reportUrl = environmentVariables.getProperty(ThucydidesSystemProperty.PUBLIC_URL.getPropertyName());
+        String reportUrl = environmentVariables.getProperty(ThucydidesSystemProperty.THUCYDIDES_PUBLIC_URL.getPropertyName());
         String reportName = firstTestOutcome.getReportName() + ".html"; //Stories.reportFor(storyUnderTest(), ReportType.HTML);
         return formatTestResultsLink(reportUrl, reportName);
     }
