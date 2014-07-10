@@ -165,7 +165,7 @@ public class JiraListener implements StepListener {
     private final AtomicInteger queueSize = new AtomicInteger(0);
 
     private void updateIssueStatus(Set<String> issues) {
-        queueSize.set(0);
+        queueSize.set(issues.size());
         for(final String issue : issues) {
             final ListenableFuture<String> future = executorService.submit(new Callable<String>() {
                 @Override
@@ -176,10 +176,10 @@ public class JiraListener implements StepListener {
             future.addListener(new Runnable() {
                 @Override
                 public void run() {
-                    queueSize.incrementAndGet();
                     logIssueTracking(issue);
                     if (!dryRun()) {
                         updateIssue(issue, resultTally.getTestOutcomesForIssue(issue));
+                        queueSize.decrementAndGet();
                     }
                 }
             }, MoreExecutors.sameThreadExecutor());
@@ -191,10 +191,10 @@ public class JiraListener implements StepListener {
             }, executorService);
 
         }
-        waitTillEmpty(queueSize);
+        waitTillUpdatesDone(queueSize);
     }
 
-    private void waitTillEmpty(AtomicInteger counter) {
+    private void waitTillUpdatesDone(AtomicInteger counter) {
         while (counter.get() > 0) {
             try {
                 Thread.sleep(50);
