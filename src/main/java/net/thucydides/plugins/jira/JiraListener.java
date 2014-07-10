@@ -1,16 +1,22 @@
 package net.thucydides.plugins.jira;
 
 import ch.lambdaj.function.convert.Converter;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.inject.Inject;
 import net.thucydides.core.ThucydidesSystemProperty;
 import net.thucydides.core.model.DataTable;
 import net.thucydides.core.model.Stories;
 import net.thucydides.core.model.Story;
 import net.thucydides.core.model.TestOutcome;
 import net.thucydides.core.model.TestResult;
+import net.thucydides.core.requirements.model.Requirement;
 import net.thucydides.core.steps.ExecutedStepDescription;
 import net.thucydides.core.steps.StepFailure;
 import net.thucydides.core.steps.StepListener;
 import net.thucydides.core.util.EnvironmentVariables;
+import net.thucydides.plugins.jira.domain.IssueSummary;
 import net.thucydides.plugins.jira.guice.Injectors;
 import net.thucydides.plugins.jira.model.IssueComment;
 import net.thucydides.plugins.jira.model.IssueTracker;
@@ -24,9 +30,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static ch.lambdaj.Lambda.convert;
 
@@ -51,6 +59,9 @@ public class JiraListener implements StepListener {
 
     private final TestResultTally resultTally;
 
+    static int DEFAULT_MAX_THREADS = 4;
+
+    @Inject
     public JiraListener(IssueTracker issueTracker,
                         EnvironmentVariables environmentVariables,
                         WorkflowLoader loader) {
@@ -62,8 +73,14 @@ public class JiraListener implements StepListener {
         this.resultTally = new TestResultTally();
         workflow = loader.load();
 
+        executorService = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(getMaxJobs()));
+
         logStatus(environmentVariables);
 
+    }
+
+    private int getMaxJobs() {
+        return environmentVariables.getPropertyAsInteger("jira.max.threads",DEFAULT_MAX_THREADS);
     }
 
     private void logStatus(EnvironmentVariables environmentVariables) {
@@ -94,7 +111,7 @@ public class JiraListener implements StepListener {
 
     public JiraListener() {
         this(Injectors.getInjector().getInstance(IssueTracker.class),
-                Injectors.getInjector().getInstance(EnvironmentVariables.class),
+                Injectors.getInjector().getProvider(EnvironmentVariables.class).get() ,
                 Injectors.getInjector().getInstance(WorkflowLoader.class));
     }
 
@@ -137,17 +154,51 @@ public class JiraListener implements StepListener {
     }
 
     public void testSuiteFinished() {
+
         if (shouldUpdateIssues()) {
             Set<String> issues = resultTally.getIssues();
             updateIssueStatus(issues);
         }
     }
 
+    private final ListeningExecutorService executorService;
+    private final AtomicInteger queueSize = new AtomicInteger(0);
+
     private void updateIssueStatus(Set<String> issues) {
-        for(String issue : issues) {
-            logIssueTracking(issue);
-            if (!dryRun()) {
-                updateIssue(issue, resultTally.getTestOutcomesForIssue(issue));
+        queueSize.set(0);
+        for(final String issue : issues) {
+            final ListenableFuture<String> future = executorService.submit(new Callable<String>() {
+                @Override
+                public String call() throws Exception {
+                    return issue;
+                }
+            });
+            future.addListener(new Runnable() {
+                @Override
+                public void run() {
+                    queueSize.incrementAndGet();
+                    logIssueTracking(issue);
+                    if (!dryRun()) {
+                        updateIssue(issue, resultTally.getTestOutcomesForIssue(issue));
+                    }
+                }
+            }, MoreExecutors.sameThreadExecutor());
+            future.addListener(new Runnable() {
+                @Override
+                public void run() {
+                    queueSize.decrementAndGet();
+                }
+            }, executorService);
+
+        }
+        waitTillEmpty(queueSize);
+    }
+
+    private void waitTillEmpty(AtomicInteger counter) {
+        while (counter.get() > 0) {
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
             }
         }
     }

@@ -18,6 +18,7 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.inOrder;
@@ -50,6 +51,8 @@ public class WhenUpdatingIssueStatus {
         MockitoAnnotations.initMocks(this);
         when(environmentVariables.getProperty("jira.url")).thenReturn("http://my.jira.server");
         when(environmentVariables.getProperty("thucydides.public.url")).thenReturn("http://my.server/myproject/thucydides");
+        when(environmentVariables.getPropertyAsInteger(eq("jira.max.threads"), anyInt())).thenReturn(4);
+
         
         workflowLoader = new ClasspathWorkflowLoader(ClasspathWorkflowLoader.BUNDLED_WORKFLOW, environmentVariables);
     }

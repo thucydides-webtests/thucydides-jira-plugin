@@ -1,6 +1,8 @@
 package net.thucydides.plugins.jira.guice;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.google.inject.name.Names;
 import net.thucydides.core.util.EnvironmentVariables;
 import net.thucydides.core.util.SystemEnvironmentVariables;
@@ -17,11 +19,16 @@ public class ThucydidesJiraModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        bind(EnvironmentVariables.class).to(SystemEnvironmentVariables.class);
         bind(Configuration.class).to(SystemPropertiesConfiguration.class);
-        bind(JIRAConfiguration.class).to(SystemPropertiesJIRAConfiguration.class);
         bind(IssueTracker.class).to(JiraIssueTracker.class);
+        bind(JIRAConfiguration.class).to(SystemPropertiesJIRAConfiguration.class);
         bind(WorkflowLoader.class).to(ClasspathWorkflowLoader.class);
+
         bindConstant().annotatedWith(Names.named("defaultWorkflow")).to("jira-workflow.groovy");
+    }
+
+    @Provides
+    public EnvironmentVariables provideEnvironmentVariables() {
+        return SystemEnvironmentVariables.createEnvironmentVariables();
     }
 }
