@@ -14,7 +14,9 @@ public class RenderedView {
     }
 
     public String getDescription() {
-        return renderedFieldValues.get(RENDERED_DESCRIPTION_FIELD);
+        return renderedFieldValues.containsKey(RENDERED_DESCRIPTION_FIELD) ?
+                renderedFieldValues.get(RENDERED_DESCRIPTION_FIELD) : renderedFieldValues.get(RENDERED_DESCRIPTION_FIELD.toLowerCase());
+
     }
 
     public boolean hasField(String field) {

@@ -175,8 +175,7 @@ public class JiraListener implements StepListener {
             });
             future.addListener(new Runnable() {
                 @Override
-                public void run() {
-                    logIssueTracking(issue);
+                public void run() {                    logIssueTracking(issue);
                     if (!dryRun()) {
                         updateIssue(issue, resultTally.getTestOutcomesForIssue(issue));
                         queueSize.decrementAndGet();
@@ -235,6 +234,7 @@ public class JiraListener implements StepListener {
 
     private TestResultComment newOrUpdatedCommentFor(final String issueId, List<TestOutcome> testOutcomes) {
         LOGGER.info("Updating comments for issue {}", issueId);
+        LOGGER.info("WIKI Rendering activated: {}", isWikiRenderedActive());
 
         List<IssueComment> comments = issueTracker.getCommentsFor(issueId);
         IssueComment existingComment = findExistingThucydidesCommentIn(comments);
@@ -242,7 +242,7 @@ public class JiraListener implements StepListener {
         TestResultComment testResultComment;
 
         if (existingComment == null) {
-            testResultComment = TestResultComment.comment()
+            testResultComment = TestResultComment.comment(isWikiRenderedActive())
                                                   .withResults(testOutcomes)
                                                   .withReportUrl(linkToReport(testOutcomes))
                                                   .withTestRun(testRunNumber).asComment();
@@ -250,6 +250,7 @@ public class JiraListener implements StepListener {
             issueTracker.addComment(issueId, testResultComment.asText());
         } else {
             testResultComment = TestResultComment.fromText(existingComment.getText())
+                                                         .withWikiRendering(isWikiRenderedActive())
                                                          .withUpdatedTestResults(testOutcomes)
                                                          .withUpdatedReportUrl(linkToReport(testOutcomes))
                                                          .withUpdatedTestRunNumber(testRunNumber);
@@ -292,11 +293,7 @@ public class JiraListener implements StepListener {
     }
 
     public String formatTestResultsLink(String reportUrl, String reportName) {
-        if (isWikiRenderedActive()) {
-            return "[Thucydides Test Results|" + reportUrl + "/" + reportName + "]";
-        } else {
-            return "Thucydides Test Results: " + reportUrl + "/" + reportName;
-        }
+        return reportUrl + "/" + reportName;
     }
 
     private boolean isWikiRenderedActive() {

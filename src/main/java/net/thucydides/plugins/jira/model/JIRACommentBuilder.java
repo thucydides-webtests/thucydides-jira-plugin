@@ -2,37 +2,43 @@ package net.thucydides.plugins.jira.model;
 
 import ch.lambdaj.function.convert.Converter;
 import net.thucydides.core.model.TestOutcome;
+import net.thucydides.core.model.TestResult;
 
 import java.util.List;
 
 import static ch.lambdaj.Lambda.convert;
 
 public class JIRACommentBuilder {
+    private final boolean wikiRendering;
     private final String testRunNumber;
     private final String reportUrl;
     private final List<NamedTestResult> namedTestResults;
 
     private final static String NEW_LINE = System.getProperty("line.separator");
 
-    public JIRACommentBuilder() {
-        this(null);
+    public JIRACommentBuilder(boolean wikiRendering) {
+        this(wikiRendering, null);
     }
 
-    public JIRACommentBuilder(final String reportUrl) {
-        this(reportUrl, null, null);
+    public JIRACommentBuilder(final boolean wikiRendering, final String reportUrl) {
+        this(wikiRendering, reportUrl, null, null);
     }
 
-    public JIRACommentBuilder(final String reportUrl,
+    public JIRACommentBuilder(final boolean wikiRendering,
+                              final String reportUrl,
                               final List<TestOutcome> testOutcomes) {
-        this(testOutcomes, reportUrl, null);
+        this(wikiRendering, testOutcomes, reportUrl, null);
     }
 
 
-    public JIRACommentBuilder(final List<TestOutcome> testOutcomes,
+    public JIRACommentBuilder(final boolean wikiRendering,
+                              final List<TestOutcome> testOutcomes,
                               final String reportUrl,
                               final String testRunNumber) {
-        this(reportUrl, namedTestResultsFrom(testOutcomes), testRunNumber);
+        this(wikiRendering, reportUrl, namedTestResultsFrom(testOutcomes), testRunNumber);
     }
+
+
 
     private static List<NamedTestResult> namedTestResultsFrom(List<TestOutcome> testOutcomes) {
         return convert(testOutcomes, toNamedTestResults());
@@ -47,29 +53,60 @@ public class JIRACommentBuilder {
         };
     }
 
-    public JIRACommentBuilder(String reportUrl,
+    public JIRACommentBuilder(boolean wikiRendering,
+                              String reportUrl,
                               List<NamedTestResult> namedTestResults,
                               String testRunNumber) {
         this.reportUrl = reportUrl;
         this.namedTestResults = namedTestResults;
         this.testRunNumber = testRunNumber;
+        this.wikiRendering = wikiRendering;
     }
 
 
     public String asText() {
         StringBuilder commentBuilder = new StringBuilder();
-        addLine(commentBuilder, "Thucydides Test Results");
-        addLine(commentBuilder, "Report: " + reportUrl);
-        addLine(commentBuilder, "Test Run: " + testRunNumber);
+        addLine(commentBuilder, bold("Thucydides Test Results"));
+
+        if (wikiRendering) {
+            addLine(commentBuilder, "[Test report|" + reportUrl + "]");
+        } else {
+            addLine(commentBuilder, "Test Report: " + reportUrl);
+        }
+        if (testRunNumber != null) {
+            addLine(commentBuilder, "Test Run: " + testRunNumber);
+        }
         addLineForEachTest(commentBuilder);
         return commentBuilder.toString();
+    }
+
+    private String bold(String text) {
+        return (wikiRendering) ? "*" + text + "*" : text;
     }
 
     private void addLineForEachTest(StringBuilder commentBuilder) {
         if (namedTestResults != null) {
             for (NamedTestResult testResult : namedTestResults) {
-                addLine(commentBuilder, testResult.getTestName() + ": "  + testResult.getTestResult());
+
+                addLine(commentBuilder, "  - " + testResult.getTestName() + ": " + testResult.getTestResult() + " "
+                + resultIconFor(testResult.getTestResult()));
             }
+        }
+    }
+
+    private String resultIconFor(TestResult testResult) {
+        if (!wikiRendering) {
+            return "";
+        }
+
+        switch (testResult) {
+            case SUCCESS: return ": (/)";
+            case FAILURE: return ": (x)";
+            case ERROR: return ": (x)";
+            case PENDING: return ": (!)";
+            case SKIPPED: return ": (!)";
+            case IGNORED: return ": (!)";
+            default: return ": (?)";
         }
     }
 
@@ -78,22 +115,22 @@ public class JIRACommentBuilder {
     }
 
     public JIRACommentBuilder withResults(final List<TestOutcome> testOutcomes) {
-        return new JIRACommentBuilder(reportUrl, testOutcomes);
+        return new JIRACommentBuilder(this.wikiRendering, reportUrl, testOutcomes);
     }
 
     public JIRACommentBuilder withTestRun(final String testRunNumber) {
-        return new JIRACommentBuilder(this.reportUrl, this.namedTestResults, testRunNumber);
+        return new JIRACommentBuilder(this.wikiRendering, this.reportUrl, this.namedTestResults, testRunNumber);
     }
 
     public JIRACommentBuilder withReportUrl(final String reportUrl) {
-        return new JIRACommentBuilder(reportUrl, this.namedTestResults, this.testRunNumber);
+        return new JIRACommentBuilder(this.wikiRendering, reportUrl, this.namedTestResults, this.testRunNumber);
     }
 
     public JIRACommentBuilder withNamedResults(List<NamedTestResult> namedTestResults) {
-        return new JIRACommentBuilder(this.reportUrl, namedTestResults, this.testRunNumber);
+        return new JIRACommentBuilder(this.wikiRendering, this.reportUrl, namedTestResults, this.testRunNumber);
     }
 
     public TestResultComment asComment() {
-        return new TestResultComment(reportUrl, testRunNumber, namedTestResults);
+        return new TestResultComment(reportUrl, testRunNumber, namedTestResults, wikiRendering);
     }
 }

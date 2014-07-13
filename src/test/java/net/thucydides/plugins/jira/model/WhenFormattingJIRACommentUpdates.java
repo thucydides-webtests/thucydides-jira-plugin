@@ -62,7 +62,7 @@ public class WhenFormattingJIRACommentUpdates {
     @Test
     public void should_include_identifiable_title_in_comment_heading() {
 
-        String updatedComment = TestResultComment.comment().asText();
+        String updatedComment = TestResultComment.comment(true).asText();
         assertThat(updatedComment, containsString("Thucydides Test Results"));
     }
 
@@ -78,7 +78,7 @@ public class WhenFormattingJIRACommentUpdates {
     @Test
     public void should_include_test_result_title() {
 
-        String updatedComment = TestResultComment.comment()
+        String updatedComment = TestResultComment.comment(true)
                 .withReportUrl("http://my.server/myproject/thucydides/my_test.html")
                 .withResults(testOutcomes)
                 .withTestRun("2012-01-17_15-39-03")
@@ -98,7 +98,7 @@ public class WhenFormattingJIRACommentUpdates {
                                     .withUpdatedTestRunNumber("2012-01-17_15-39-03")
                                     .asText();
 
-        String expectedComment = TestResultComment.comment()
+        String expectedComment = TestResultComment.comment(true)
                 .withReportUrl("http://my.server/myproject/thucydides/my_test.html")
                 .withResults(testOutcomes)
                 .withTestRun("2012-01-17_15-39-03")
@@ -110,19 +110,19 @@ public class WhenFormattingJIRACommentUpdates {
     @Test
     public void should_include_link_to_test_report() {
 
-        String updatedComment = TestResultComment.comment()
+        String updatedComment = TestResultComment.comment(true)
                 .withReportUrl("http://my.server/myproject/thucydides/my_test.html")
                 .withResults(testOutcomes)
                 .withTestRun("2012-01-17_15-39-03")
                 .asText();
 
-        assertThat(updatedComment, containsString("Report: http://my.server/myproject/thucydides/my_test.html"));
+        assertThat(updatedComment, containsString("http://my.server/myproject/thucydides/my_test.html"));
     }
 
     @Test
     public void should_include_the_latest_build_job_number() {
 
-        String updatedComment = TestResultComment.comment()
+        String updatedComment = TestResultComment.comment(true)
                 .withReportUrl("http://my.server/myproject/thucydides/my_test.html")
                 .withResults(testOutcomes)
                 .withTestRun("2012-01-17_15-39-03")
@@ -135,7 +135,7 @@ public class WhenFormattingJIRACommentUpdates {
     @Test
     public void should_include_the_result_for_each_test() {
 
-        String updatedComment = TestResultComment.comment()
+        String updatedComment = TestResultComment.comment(true)
                 .withReportUrl("http://my.server/myproject/thucydides/my_test.html")
                 .withResults(testOutcomes)
                 .withTestRun("2012-01-17_15-39-03")
@@ -149,7 +149,7 @@ public class WhenFormattingJIRACommentUpdates {
     @Test
     public void should_be_able_to_obtain_the_latest_build_job_number_from_a_comment() {
 
-        String commentText = TestResultComment.comment()
+        String commentText = TestResultComment.comment(true)
                 .withReportUrl("http://my.server/myproject/thucydides/my_test.html")
                 .withResults(testOutcomes)
                 .withTestRun("2012-01-17_15-39-03")
@@ -163,7 +163,7 @@ public class WhenFormattingJIRACommentUpdates {
     @Test
     public void should_be_able_to_obtain_the_latest_report_url_from_a_comment() {
 
-        String commentText = TestResultComment.comment()
+        String commentText = TestResultComment.comment(true)
                 .withReportUrl("http://my.server/myproject/thucydides/my_test.html")
                 .withResults(testOutcomes)
                 .withTestRun("2012-01-17_15-39-03")
@@ -177,7 +177,7 @@ public class WhenFormattingJIRACommentUpdates {
     @Test
     public void should_be_able_to_obtain_the_recorded_test_results_for_each_test() {
 
-        String commentText = TestResultComment.comment()
+        String commentText = TestResultComment.comment(true)
                 .withReportUrl("http://my.server/myproject/thucydides/my_test.html")
                 .withResults(testOutcomes)
                 .withTestRun("2012-01-17_15-39-03")
@@ -200,7 +200,7 @@ public class WhenFormattingJIRACommentUpdates {
     @Test
     public void should_be_able_to_obtain_the_overall_test_result_from_tests_in_a_comment() {
 
-        String commentText = TestResultComment.comment()
+        String commentText = TestResultComment.comment(true)
                 .withReportUrl("http://my.server/myproject/thucydides/my_test.html")
                 .withResults(testOutcomes)
                 .withTestRun("2012-01-17_15-39-03")
@@ -214,7 +214,7 @@ public class WhenFormattingJIRACommentUpdates {
     @Test
     public void should_be_able_to_write_a_new_comment_using_the_existing_comments_data() {
 
-        String commentText = TestResultComment.comment()
+        String commentText = TestResultComment.comment(true)
                 .withReportUrl("http://my.server/myproject/thucydides/my_test.html")
                 .withResults(testOutcomes)
                 .withTestRun("2012-01-17_15-39-03")
@@ -228,7 +228,7 @@ public class WhenFormattingJIRACommentUpdates {
     @Test
     public void should_be_able_to_add_or_update_test_results_in_the_existing_comments_data() {
 
-        String commentText = TestResultComment.comment()
+        String commentText = TestResultComment.comment(true)
                 .withReportUrl("http://my.server/myproject/thucydides/my_test.html")
                 .withResults(testOutcomes)
                 .withTestRun("2012-01-17_15-39-03")

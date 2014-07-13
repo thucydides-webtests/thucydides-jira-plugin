@@ -23,7 +23,7 @@ class WhenIdentifyingCustomFields extends Specification {
         when:
             def options = jiraClient.findOptionsForCascadingSelect("Requirements");
         then:
-            options.collect { it.option } == ["Grow Apples", "Grow Potatoes", "Raise Chickens", "Raise Sheep"]
+            options.collect { it.option }.containsAll("Grow Apples", "Grow Potatoes", "Raise Chickens", "Raise Sheep")
         and:
             options[0].nestedOptions.collect { it.option } == ["Grow red apples", "Grow green apples"]
     }

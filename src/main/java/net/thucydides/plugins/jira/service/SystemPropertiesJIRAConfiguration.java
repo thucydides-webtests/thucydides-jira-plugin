@@ -1,6 +1,6 @@
 package net.thucydides.plugins.jira.service;
 
-import com.google.inject.Inject;
+import net.thucydides.core.guice.Injectors;
 import net.thucydides.core.util.EnvironmentVariables;
 import net.thucydides.core.util.LocalPreferences;
 import net.thucydides.core.util.PropertiesFileLocalPreferences;
@@ -25,11 +25,17 @@ public class SystemPropertiesJIRAConfiguration implements JIRAConfiguration {
 
     private final Logger logger = LoggerFactory.getLogger(SystemPropertiesJIRAConfiguration.class);
 
-    @Inject
+    public SystemPropertiesJIRAConfiguration() {
+        this(Injectors.getInjector().getProvider(EnvironmentVariables.class).get());
+    }
+
+
     public SystemPropertiesJIRAConfiguration(EnvironmentVariables environmentVariables) {
         this.environmentVariables = environmentVariables;
         updateEnvironmentVariablesFromPropertiesFiles(environmentVariables);
     }
+
+
 
     private void updateEnvironmentVariablesFromPropertiesFiles(EnvironmentVariables environmentVariables) {
         LocalPreferences localPreferences = new PropertiesFileLocalPreferences(environmentVariables);
@@ -63,7 +69,7 @@ public class SystemPropertiesJIRAConfiguration implements JIRAConfiguration {
     }
 
     public boolean isWikiRenderedActive() {
-        return Boolean.valueOf(getEnvironmentOrSystemProperty(JIRA_WIKI_RENDERER, "true"));
+        return environmentVariables.getPropertyAsBoolean(JIRA_WIKI_RENDERER, true);
     }
 
     public String getProject() {
