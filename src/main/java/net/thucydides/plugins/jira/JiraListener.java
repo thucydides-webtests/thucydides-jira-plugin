@@ -288,7 +288,7 @@ public class JiraListener implements StepListener {
     private String linkToReport(List<TestOutcome> testOutcomes) {
         TestOutcome firstTestOutcome = testOutcomes.get(0);
         String reportUrl = environmentVariables.getProperty(ThucydidesSystemProperty.THUCYDIDES_PUBLIC_URL.getPropertyName());
-        String reportName = firstTestOutcome.getReportName() + ".html"; //Stories.reportFor(storyUnderTest(), ReportType.HTML);
+        String reportName = firstTestOutcome.getReportName() + ".html";
         return formatTestResultsLink(reportUrl, reportName);
     }
 
@@ -384,6 +384,16 @@ public class JiraListener implements StepListener {
 
 
     public void testIgnored() {
+
+    }
+
+    @Override
+    public void testSkipped() {
+
+    }
+
+    @Override
+    public void testPending() {
 
     }
 
